@@ -17,7 +17,7 @@ export function createApp() {
       credentials: true
     })
   );
-  app.use(express.json({ limit: '10mb' }));
+  app.use(express.json({ limit: '50mb' }));
   app.use(express.urlencoded({ extended: true }));
   app.use(morgan(env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 
@@ -34,4 +34,3 @@ export function createApp() {
 
   return app;
 }
-

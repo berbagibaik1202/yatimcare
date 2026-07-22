@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { db } from '../../services/dbStore';
-import { Settings2, Save, Palette, RefreshCcw, Image, Upload, Trash2, Building2 } from 'lucide-react';
+import { Settings2, Save, Palette, RefreshCcw, Image, Upload, Trash2, Building2, Database, Download, RotateCcw } from 'lucide-react';
 
 interface AppSettingsManagerProps {
   onRefreshData: () => void;
@@ -22,7 +22,10 @@ export const AppSettingsManager: React.FC<AppSettingsManagerProps> = ({ onRefres
     return typeof value === 'string' ? value : '';
   });
   const [saving, setSaving] = useState(false);
+  const [backuping, setBackuping] = useState(false);
+  const [restoring, setRestoring] = useState(false);
   const logoInputRef = useRef<HTMLInputElement>(null);
+  const restoreInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setAppName(db.getAppName());
@@ -69,6 +72,62 @@ export const AppSettingsManager: React.FC<AppSettingsManagerProps> = ({ onRefres
     setAppLogoUrl('');
     if (logoInputRef.current) {
       logoInputRef.current.value = '';
+    }
+  };
+
+  const handleDownloadBackup = async () => {
+    try {
+      setBackuping(true);
+      const backup = await db.exportDatabaseBackup();
+      const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      const exportedAt = new Date(backup.exportedAt).toISOString().slice(0, 10);
+      anchor.href = url;
+      anchor.download = `yatimcare-backup-${exportedAt}.json`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(url);
+      alert('Backup database berhasil diunduh.');
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Gagal membuat backup database');
+    } finally {
+      setBackuping(false);
+    }
+  };
+
+  const handlePickRestoreFile = () => {
+    restoreInputRef.current?.click();
+  };
+
+  const handleRestoreFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      'Restore akan mengganti data database saat ini dengan isi file backup. Lanjutkan?'
+    );
+    if (!confirmed) {
+      e.target.value = '';
+      return;
+    }
+
+    try {
+      setRestoring(true);
+      const raw = await file.text();
+      const parsed = JSON.parse(raw) as Parameters<typeof db.restoreDatabaseBackup>[0];
+      await db.restoreDatabaseBackup(parsed);
+      onRefreshData();
+      alert('Database berhasil dipulihkan dari backup.');
+      window.location.reload();
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Gagal memulihkan database dari backup');
+    } finally {
+      setRestoring(false);
+      e.target.value = '';
     }
   };
 
@@ -253,6 +312,59 @@ export const AppSettingsManager: React.FC<AppSettingsManagerProps> = ({ onRefres
 
             <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-4 text-xs text-slate-500 leading-relaxed">
               Logo saat ini akan dipakai di navbar dan area branding utama. Jika kosong, sistem akan memakai ikon default.
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-3xl border border-amber-200 bg-amber-50/70 p-5 space-y-4">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <div className="flex items-center gap-2 text-xs font-bold text-amber-800">
+                <Database className="w-4 h-4" />
+                <span>Backup & Restore Database</span>
+              </div>
+              <p className="text-xs text-amber-900/80 mt-1">
+                Backup akan mengunduh snapshot seluruh data. Restore akan menimpa isi database dengan file backup yang dipilih.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={handleDownloadBackup}
+                disabled={backuping || restoring}
+                className="px-4 py-3 bg-amber-600 hover:bg-amber-700 disabled:opacity-60 text-white text-xs font-bold rounded-2xl shadow-xs transition-colors flex items-center gap-2 cursor-pointer"
+              >
+                <Download className="w-4 h-4" />
+                <span>{backuping ? 'Membuat Backup...' : 'Backup Database'}</span>
+              </button>
+
+              <input
+                ref={restoreInputRef}
+                type="file"
+                accept="application/json,.json"
+                onChange={handleRestoreFileChange}
+                className="hidden"
+              />
+
+              <button
+                type="button"
+                onClick={handlePickRestoreFile}
+                disabled={backuping || restoring}
+                className="px-4 py-3 bg-slate-900 hover:bg-slate-800 disabled:opacity-60 text-white text-xs font-bold rounded-2xl shadow-xs transition-colors flex items-center gap-2 cursor-pointer"
+              >
+                <RotateCcw className="w-4 h-4" />
+                <span>{restoring ? 'Memulihkan...' : 'Restore Database'}</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-[11px] text-amber-900/80">
+            <div className="rounded-2xl bg-white/80 border border-amber-200 p-3">
+              Backup menyimpan users, anak, wali, donatur, program, donasi, pengeluaran, audit log, pengaturan, dan rekening.
+            </div>
+            <div className="rounded-2xl bg-white/80 border border-amber-200 p-3">
+              Restore cocok dipakai saat migrasi server atau pemulihan data. Pastikan file backup berasal dari aplikasi ini.
             </div>
           </div>
         </div>

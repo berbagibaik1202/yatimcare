@@ -38,6 +38,12 @@ type BootstrapPayload = {
   currentUser: User | null;
 };
 
+type DatabaseBackupPayload = {
+  version: number;
+  exportedAt: string;
+  snapshot: Record<string, unknown>;
+};
+
 class DatabaseStore {
   private users: User[] = [];
   private guardians: Guardian[] = [];
@@ -341,6 +347,37 @@ class DatabaseStore {
 
     await this.load(true);
     return data;
+  }
+
+  public async exportDatabaseBackup(): Promise<DatabaseBackupPayload> {
+    const response = await fetch('/api/backup', {
+      credentials: 'include'
+    });
+
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(payload?.message ?? 'Gagal membuat backup database');
+    }
+
+    return payload.data as DatabaseBackupPayload;
+  }
+
+  public async restoreDatabaseBackup(backupPayload: DatabaseBackupPayload): Promise<void> {
+    const response = await fetch('/api/backup/restore', {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(backupPayload)
+    });
+
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(payload?.message ?? 'Gagal memulihkan backup database');
+    }
+
+    await this.load(true);
   }
 
   // --- CHILDREN ---
