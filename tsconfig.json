@@ -22,5 +22,12 @@
     },
     "allowImportingTsExtensions": true,
     "noEmit": true
-  }
+  },
+  "exclude": [
+    "dist",
+    "release",
+    "backend/dist",
+    "backend/node_modules",
+    "node_modules"
+  ]
 }

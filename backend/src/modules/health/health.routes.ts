@@ -13,9 +13,8 @@ router.get('/', (_req, res) => {
 router.get('/info', (_req, res) => {
   res.json({
     appName: 'YatimCare',
-    stack: ['Node.js', 'Express', 'TypeScript', 'Prisma', 'MySQL']
+    stack: ['Node.js', 'Express', 'TypeScript', 'MySQL native']
   });
 });
 
 export default router;
-

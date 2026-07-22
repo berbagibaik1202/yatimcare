@@ -54,7 +54,7 @@ export const PublicLanding: React.FC<PublicLandingProps> = ({
               </div>
 
               <h1 className="font-serif font-extrabold text-3xl sm:text-4xl lg:text-5xl leading-tight tracking-tight text-white">
-                Menebar Senyum & Harapan Masa Depan untuk <span className="text-amber-300 underline decoration-amber-300/40 underline-offset-8">Anak-Anak Yatim</span>
+                Menebar Senyum & Harapan Masa Depan untuk <span className="text-amber-300 underline decoration-amber-300/40 underline-offset-8">Sesama</span>
               </h1>
 
               <p className="text-emerald-100 text-sm sm:text-base leading-relaxed max-w-2xl font-normal">

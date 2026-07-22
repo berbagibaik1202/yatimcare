@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { Prisma } from '../../generated/prisma.js';
-import { prisma } from '../../lib/prisma.js';
+import { Prisma } from '../../generated/db.js';
+import { prisma } from '../../lib/db.js';
 import { asyncHandler } from '../../lib/asyncHandler.js';
 import { requireCurrentUserRole } from '../../lib/authorization.js';
 import { ApiError } from '../../lib/error.js';

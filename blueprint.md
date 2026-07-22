@@ -4,7 +4,7 @@
 
 - Frontend: React + Vite + TypeScript + Tailwind CSS
 - Backend: Node.js + Express.js + TypeScript
-- ORM: Prisma
+- ORM: MySQL native adapter
 - Database: MySQL 8+
 - Cache: Redis
 - Storage: MinIO atau local storage
@@ -77,7 +77,7 @@ Membangun sistem informasi yayasan yang transparan, modern, aman, dan mudah digu
 - Node.js 22 LTS
 - Express.js
 - TypeScript
-- Prisma ORM
+- MySQL native adapter
 - MySQL
 - JWT Authentication
 - Redis
@@ -129,7 +129,7 @@ backend/
 - Gunakan charset `utf8mb4`
 - Gunakan collation `utf8mb4_unicode_ci`
 - Simpan relasi utama untuk users, guardians, children, donors, programs, donations, expenses, aid distributions, surveys, audit logs, dan notifications
-- Gunakan Prisma sebagai source of truth untuk skema database
+- Gunakan skema database MySQL native sebagai source of truth
 
 ## Roadmap
 

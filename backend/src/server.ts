@@ -1,8 +1,18 @@
-import { createApp } from './app.js';
-import { env } from './config/env.js';
-import { prisma } from './lib/prisma.js';
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const currentDir = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.join(currentDir, '../.env') });
 
 async function main() {
+  const [{ ensureSchema, prisma }, { createApp }, { env }] = await Promise.all([
+    import('./lib/db.js'),
+    import('./app.js'),
+    import('./config/env.js')
+  ]);
+  await ensureSchema();
+  let prismaClient: { $disconnect?: () => Promise<void> } | null = prisma;
   const app = createApp();
 
   const server = app.listen(env.PORT, () => {
@@ -11,7 +21,7 @@ async function main() {
 
   const shutdown = async () => {
     server.close(async () => {
-      await prisma.$disconnect();
+      await prismaClient?.$disconnect?.();
       process.exit(0);
     });
   };
@@ -22,6 +32,5 @@ async function main() {
 
 main().catch(async (error) => {
   console.error('Failed to start backend', error);
-  await prisma.$disconnect();
   process.exit(1);
 });

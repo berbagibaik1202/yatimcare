@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Program, PaymentMethod } from '../../types';
+import { BankAccount, Program, PaymentMethod } from '../../types';
 import { db } from '../../services/dbStore';
 import { Heart, X, CheckCircle2, Copy, Building2, QrCode, Sparkles } from 'lucide-react';
 
@@ -20,15 +20,13 @@ export const DonationModal: React.FC<DonationModalProps> = ({
 }) => {
   const currentUser = db.getCurrentUser();
   const bankAccounts = db.getDonationBankAccounts();
-  const fallbackBank = {
+  const fallbackBank: BankAccount = {
     id: 'fallback-donation-bank',
     bankName: 'BSI',
     accountNumber: '7123456789',
     accountHolder: 'Yayasan YatimCare',
-    branch: undefined,
     isActive: true,
     isPublic: true,
-    logoUrl: undefined
   };
   const paymentAccounts = bankAccounts.length > 0 ? bankAccounts : [fallbackBank];
 

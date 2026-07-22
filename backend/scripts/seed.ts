@@ -1,8 +1,7 @@
 import 'dotenv/config';
-import { PrismaClient, Prisma } from '../src/generated/prisma.js';
+import { Prisma } from '../src/generated/db.js';
+import { ensureSchema, prisma } from '../src/lib/db.js';
 import { hashPassword } from '../src/lib/auth.js';
-
-const prisma = new PrismaClient();
 
 const d = (value: number) => new Prisma.Decimal(value);
 const dt = (value: string) => new Date(value);
@@ -30,6 +29,7 @@ async function clearDatabase() {
 
 async function main() {
   console.log('Seeding YatimCare database...');
+  await ensureSchema();
 
   await clearDatabase();
 

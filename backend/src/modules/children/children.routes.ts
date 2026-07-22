@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import { Prisma, VerificationStatus } from '../../generated/prisma.js';
+import { Prisma, VerificationStatus } from '../../generated/db.js';
 import { z } from 'zod';
-import { prisma } from '../../lib/prisma.js';
+import { prisma } from '../../lib/db.js';
 import { asyncHandler } from '../../lib/asyncHandler.js';
 import { requireCurrentUserRole } from '../../lib/authorization.js';
 

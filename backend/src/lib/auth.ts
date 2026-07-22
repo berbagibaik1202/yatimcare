@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import type { CookieOptions, Request } from 'express';
-import { prisma } from './prisma.js';
+import { prisma } from './db.js';
 import { env } from '../config/env.js';
 
 export const AUTH_COOKIE_NAME = 'yatimcare_session';

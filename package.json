@@ -5,10 +5,14 @@
   "type": "module",
   "scripts": {
     "dev": "tsx server.ts",
-    "build": "vite build && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
+    "build:client": "vite build",
+    "build:server": "esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
+    "build": "npm run build:client && npm run build:server",
+    "build:release": "npm run build:client && npm --prefix backend run build && node scripts/prepare-release.mjs",
+    "deploy:cpanel": "npm run build:release",
     "start": "node dist/server.cjs",
     "preview": "vite preview",
-    "clean": "rm -rf dist server.js",
+    "clean": "rm -rf dist release server.js",
     "lint": "tsc --noEmit"
   },
   "dependencies": {

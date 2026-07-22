@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { prisma } from '../../lib/prisma.js';
+import { prisma } from '../../lib/db.js';
 import { asyncHandler } from '../../lib/asyncHandler.js';
 import { toNumber } from '../../lib/format.js';
 import { getCurrentUserFromRequest } from '../../lib/auth.js';

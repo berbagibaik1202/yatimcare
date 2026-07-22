@@ -10,7 +10,7 @@ import {
   mapUserRecord,
   verifyPassword
 } from '../../lib/auth.js';
-import { prisma } from '../../lib/prisma.js';
+import { prisma } from '../../lib/db.js';
 
 const router = Router();
 

@@ -44,6 +44,18 @@ type DatabaseBackupPayload = {
   snapshot: Record<string, unknown>;
 };
 
+const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.trim();
+
+function resolveApiUrl(path: string) {
+  if (!apiBaseUrl) {
+    return path;
+  }
+
+  const normalizedBase = apiBaseUrl.replace(/\/+$/, '');
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  return `${normalizedBase}${normalizedPath}`;
+}
+
 class DatabaseStore {
   private users: User[] = [];
   private guardians: Guardian[] = [];
@@ -67,6 +79,10 @@ class DatabaseStore {
   constructor() {
   }
 
+  private apiUrl(path: string) {
+    return resolveApiUrl(path);
+  }
+
   public async load(force = false): Promise<void> {
     if (this.loaded && !force) {
       return;
@@ -76,7 +92,7 @@ class DatabaseStore {
       return this.loadingPromise;
     }
 
-    this.loadingPromise = fetch('/api/bootstrap', {
+    this.loadingPromise = fetch(this.apiUrl('/api/bootstrap'), {
       credentials: 'include'
     })
       .then(async (response) => {
@@ -119,7 +135,7 @@ class DatabaseStore {
   }
 
   private async requestJson<T>(path: string, init: RequestInit, fallbackMessage: string): Promise<T | undefined> {
-    const response = await fetch(path, {
+    const response = await fetch(this.apiUrl(path), {
       credentials: 'include',
       ...init,
       headers: {
@@ -147,7 +163,7 @@ class DatabaseStore {
   }
 
   public async login(email: string, password: string): Promise<User> {
-    const response = await fetch('/api/auth/login', {
+    const response = await fetch(this.apiUrl('/api/auth/login'), {
       method: 'POST',
       credentials: 'include',
       headers: {
@@ -173,7 +189,7 @@ class DatabaseStore {
   }
 
   public async logout(): Promise<void> {
-    await fetch('/api/auth/logout', {
+    await fetch(this.apiUrl('/api/auth/logout'), {
       method: 'POST',
       credentials: 'include'
     });
@@ -350,7 +366,7 @@ class DatabaseStore {
   }
 
   public async exportDatabaseBackup(): Promise<DatabaseBackupPayload> {
-    const response = await fetch('/api/backup', {
+    const response = await fetch(this.apiUrl('/api/backup'), {
       credentials: 'include'
     });
 
@@ -363,7 +379,7 @@ class DatabaseStore {
   }
 
   public async restoreDatabaseBackup(backupPayload: DatabaseBackupPayload): Promise<void> {
-    const response = await fetch('/api/backup/restore', {
+    const response = await fetch(this.apiUrl('/api/backup/restore'), {
       method: 'POST',
       credentials: 'include',
       headers: {
