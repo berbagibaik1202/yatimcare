@@ -16,6 +16,10 @@ export type AidStatus = 'dijadwalkan' | 'terproses' | 'selesai' | 'dibatalkan';
 
 export type SurveyEligibility = 'layak' | 'layak_catatan' | 'perlu_survei_ulang' | 'tidak_layak';
 
+export type ProgramCategory = 'pendidikan' | 'kesehatan' | 'santunan' | 'sembako' | 'pembangunan' | 'darurat';
+
+export type ProgramStatus = 'aktif' | 'selesai' | 'draft' | 'dihentikan';
+
 export interface User {
   id: string;
   name: string;
@@ -154,7 +158,7 @@ export interface Program {
   programCode: string;
   title: string;
   slug: string;
-  category: 'pendidikan' | 'kesehatan' | 'santunan' | 'sembako' | 'pembangunan' | 'darurat';
+  category: ProgramCategory;
   description: string;
   targetAmount: number;
   collectedAmount: number;
@@ -162,7 +166,7 @@ export interface Program {
   startDate: string;
   endDate: string;
   thumbnail: string;
-  status: 'aktif' | 'selesai' | 'draft' | 'dihentikan';
+  status: ProgramStatus;
   isFeatured: boolean;
   donorCount: number;
   createdAt: string;

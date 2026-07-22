@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { db } from '../../services/dbStore';
 import { ChildrenManager } from './ChildrenManager';
 import { GuardiansManager } from './GuardiansManager';
+import { ProgramsManager } from './ProgramsManager';
 import { SurveyManager } from './SurveyManager';
 import { AidDistributionManager } from './AidDistributionManager';
 import { DonationsManager } from '../donations/DonationsManager';
@@ -16,6 +17,7 @@ import {
   Heart,
   DollarSign,
   FileCheck,
+  BookOpen,
   MapPin,
   PieChart,
   RotateCcw,
@@ -29,7 +31,7 @@ interface AdminDashboardProps {
   onRefreshData: () => void;
 }
 
-type AdminTabId = 'overview' | 'children' | 'guardians' | 'donors' | 'survey' | 'aid' | 'donations' | 'finance' | 'audit' | 'users' | 'settings';
+type AdminTabId = 'overview' | 'children' | 'guardians' | 'programs' | 'donors' | 'survey' | 'aid' | 'donations' | 'finance' | 'audit' | 'users' | 'settings';
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onRefreshData }) => {
   const [activeAdminSubTab, setActiveAdminSubTab] = useState<AdminTabId>('overview');
@@ -52,6 +54,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onRefreshData })
             { id: 'overview', label: 'Ringkasan Utama', icon: PieChart },
             { id: 'children', label: 'Data Anak & Verifikasi', icon: Users },
             { id: 'guardians', label: 'Data Wali', icon: UsersRound },
+            { id: 'programs', label: 'Program Donasi', icon: BookOpen },
             { id: 'donors', label: 'Data Donatur', icon: UserCheck },
             { id: 'survey', label: 'Survei Lapangan', icon: MapPin },
             { id: 'aid', label: 'Penyaluran Bantuan', icon: Heart },
@@ -236,6 +239,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onRefreshData })
               {canManageAdminUsers && (
                 <>
                   <button
+                    onClick={() => setActiveAdminSubTab('programs')}
+                    className="p-5 rounded-2xl bg-slate-50 hover:bg-emerald-50 hover:border-emerald-200 border border-slate-200 text-left transition-all cursor-pointer group"
+                  >
+                    <BookOpen className="w-5 h-5 text-emerald-600 mb-2" />
+                    <p className="font-bold text-sm text-slate-900 group-hover:text-emerald-800">Program Donasi &gt;</p>
+                    <p className="font-normal text-slate-500 text-[11px] mt-0.5">Kelola 3 program utama dan program baru lainnya.</p>
+                  </button>
+
+                  <button
                     onClick={() => setActiveAdminSubTab('users')}
                     className="p-5 rounded-2xl bg-slate-50 hover:bg-emerald-50 hover:border-emerald-200 border border-slate-200 text-left transition-all cursor-pointer group"
                   >
@@ -261,6 +273,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onRefreshData })
 
       {activeAdminSubTab === 'children' && !isTreasurer && <ChildrenManager onRefreshData={onRefreshData} />}
       {activeAdminSubTab === 'guardians' && !isTreasurer && <GuardiansManager onRefreshData={onRefreshData} />}
+      {activeAdminSubTab === 'programs' && canManageAdminUsers && <ProgramsManager onRefreshData={onRefreshData} />}
       {activeAdminSubTab === 'donors' && <DonorsListManager onRefreshData={onRefreshData} />}
       {activeAdminSubTab === 'survey' && !isTreasurer && <SurveyManager onRefreshData={onRefreshData} />}
       {activeAdminSubTab === 'aid' && <AidDistributionManager onRefreshData={onRefreshData} />}

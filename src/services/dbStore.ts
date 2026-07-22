@@ -6,6 +6,8 @@ import {
   Donor,
   DonorType,
   Program,
+  ProgramCategory,
+  ProgramStatus,
   Donation,
   Expense,
   AidDistribution,
@@ -644,6 +646,65 @@ class DatabaseStore {
   // --- PROGRAMS ---
   public getPrograms(): Program[] {
     return this.programs;
+  }
+
+  public async createProgramRecord(programData: {
+    title: string;
+    category: ProgramCategory;
+    description: string;
+    targetAmount: number;
+    startDate: string;
+    endDate: string;
+    thumbnail: string;
+    status?: ProgramStatus;
+    isFeatured?: boolean;
+  }): Promise<Program> {
+    const data = await this.requestJson<Program>('/api/programs', {
+      method: 'POST',
+      body: JSON.stringify(programData)
+    }, 'Gagal menambahkan program donasi');
+
+    if (!data) {
+      throw new Error('Gagal menambahkan program donasi');
+    }
+
+    await this.load(true);
+    return data;
+  }
+
+  public async updateProgramRecord(
+    id: string,
+    updates: Partial<{
+      title: string;
+      category: ProgramCategory;
+      description: string;
+      targetAmount: number;
+      startDate: string;
+      endDate: string;
+      thumbnail: string;
+      status: ProgramStatus;
+      isFeatured: boolean;
+    }>
+  ): Promise<Program> {
+    const data = await this.requestJson<Program>(`/api/programs/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(updates)
+    }, 'Gagal memperbarui program donasi');
+
+    if (!data) {
+      throw new Error('Gagal memperbarui program donasi');
+    }
+
+    await this.load(true);
+    return data;
+  }
+
+  public async deleteProgramRecord(id: string): Promise<void> {
+    await this.requestJson<void>(`/api/programs/${id}`, {
+      method: 'DELETE'
+    }, 'Gagal menghapus program donasi');
+
+    await this.load(true);
   }
 
   public addProgram(program: Omit<Program, 'id' | 'programCode' | 'collectedAmount' | 'distributedAmount' | 'donorCount' | 'createdAt'>): Program {
