@@ -15,6 +15,7 @@ import {
   Phone,
   Calendar,
   CheckCircle2,
+  PlusCircle,
   Edit,
   Trash2,
   X
@@ -28,7 +29,18 @@ export const DonorsListManager: React.FC<DonorsListManagerProps> = ({ onRefreshD
   const donors = db.getDonors();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
+  const [isCreateDonorModalOpen, setIsCreateDonorModalOpen] = useState(false);
   const [selectedDonorForEdit, setSelectedDonorForEdit] = useState<Donor | null>(null);
+  const [donorCreateForm, setDonorCreateForm] = useState({
+    fullName: '',
+    donorType: 'individu' as Donor['donorType'],
+    institutionName: '',
+    email: '',
+    phone: '',
+    address: '',
+    isAnonymousDefault: false,
+    isRecurringDonor: true
+  });
   const [donorEditForm, setDonorEditForm] = useState({
     fullName: '',
     donorType: 'individu' as Donor['donorType'],
@@ -54,6 +66,47 @@ export const DonorsListManager: React.FC<DonorsListManagerProps> = ({ onRefreshD
   });
 
   const totalDonationAccumulated = filteredDonors.reduce((sum, d) => sum + (d.totalDonation || 0), 0);
+
+  const openCreateDonorModal = () => {
+    setDonorCreateForm({
+      fullName: '',
+      donorType: 'individu',
+      institutionName: '',
+      email: '',
+      phone: '',
+      address: '',
+      isAnonymousDefault: false,
+      isRecurringDonor: true
+    });
+    setIsCreateDonorModalOpen(true);
+  };
+
+  const closeCreateDonorModal = () => {
+    setIsCreateDonorModalOpen(false);
+  };
+
+  const handleCreateDonor = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    try {
+      await db.createDonorRecord({
+        fullName: donorCreateForm.fullName,
+        donorType: donorCreateForm.donorType,
+        institutionName: donorCreateForm.institutionName || undefined,
+        email: donorCreateForm.email,
+        phone: donorCreateForm.phone,
+        address: donorCreateForm.address || undefined,
+        isAnonymousDefault: donorCreateForm.isAnonymousDefault,
+        isRecurringDonor: donorCreateForm.isRecurringDonor
+      });
+
+      onRefreshData?.();
+      setIsCreateDonorModalOpen(false);
+      alert('Data donatur berhasil ditambahkan.');
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Gagal menambahkan data donatur');
+    }
+  };
 
   const openEditDonorModal = (donor: Donor) => {
     setDonorEditForm({
@@ -197,6 +250,15 @@ export const DonorsListManager: React.FC<DonorsListManagerProps> = ({ onRefreshD
               Total: {donors.length} Donatur
             </span>
 
+            <button
+              onClick={openCreateDonorModal}
+              className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+              title="Tambah Data Donatur"
+            >
+              <PlusCircle className="w-3.5 h-3.5" />
+              <span>Tambah Donatur</span>
+            </button>
+
             {/* Export Buttons */}
             <div className="flex items-center gap-1.5 ml-0 sm:ml-2">
               <button
@@ -245,6 +307,120 @@ export const DonorsListManager: React.FC<DonorsListManagerProps> = ({ onRefreshD
           </select>
         </div>
       </div>
+
+      {isCreateDonorModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 overflow-y-auto">
+          <form onSubmit={handleCreateDonor} className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-slate-100 my-8 space-y-6">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+              <div>
+                <h3 className="font-serif font-bold text-lg text-slate-900">Tambah Data Donatur</h3>
+                <p className="text-xs text-slate-500">Masukkan profil donatur baru ke database.</p>
+              </div>
+              <button
+                type="button"
+                onClick={closeCreateDonorModal}
+                className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+                aria-label="Tutup Modal"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+              <label className="space-y-1.5">
+                <span className="font-bold text-slate-700">Nama Donatur</span>
+                <input
+                  value={donorCreateForm.fullName}
+                  onChange={(e) => setDonorCreateForm(prev => ({ ...prev, fullName: e.target.value }))}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                />
+              </label>
+              <label className="space-y-1.5">
+                <span className="font-bold text-slate-700">Kategori</span>
+                <select
+                  value={donorCreateForm.donorType}
+                  onChange={(e) => setDonorCreateForm(prev => ({ ...prev, donorType: e.target.value as Donor['donorType'] }))}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                >
+                  <option value="individu">Individu</option>
+                  <option value="perusahaan">Perusahaan</option>
+                  <option value="organisasi">Organisasi</option>
+                  <option value="komunitas">Komunitas</option>
+                  <option value="anonim">Anonim</option>
+                </select>
+              </label>
+              <label className="space-y-1.5">
+                <span className="font-bold text-slate-700">Instansi / Perusahaan</span>
+                <input
+                  value={donorCreateForm.institutionName}
+                  onChange={(e) => setDonorCreateForm(prev => ({ ...prev, institutionName: e.target.value }))}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                />
+              </label>
+              <label className="space-y-1.5">
+                <span className="font-bold text-slate-700">Email</span>
+                <input
+                  type="email"
+                  value={donorCreateForm.email}
+                  onChange={(e) => setDonorCreateForm(prev => ({ ...prev, email: e.target.value }))}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                />
+              </label>
+              <label className="space-y-1.5">
+                <span className="font-bold text-slate-700">Nomor Kontak</span>
+                <input
+                  value={donorCreateForm.phone}
+                  onChange={(e) => setDonorCreateForm(prev => ({ ...prev, phone: e.target.value }))}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                />
+              </label>
+              <label className="sm:col-span-2 space-y-1.5">
+                <span className="font-bold text-slate-700">Alamat</span>
+                <textarea
+                  rows={3}
+                  value={donorCreateForm.address}
+                  onChange={(e) => setDonorCreateForm(prev => ({ ...prev, address: e.target.value }))}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                />
+              </label>
+              <label className="flex items-center gap-2 text-slate-700 font-bold">
+                <input
+                  type="checkbox"
+                  checked={donorCreateForm.isRecurringDonor}
+                  onChange={(e) => setDonorCreateForm(prev => ({ ...prev, isRecurringDonor: e.target.checked }))}
+                  className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                />
+                Donatur Tetap
+              </label>
+              <label className="flex items-center gap-2 text-slate-700 font-bold">
+                <input
+                  type="checkbox"
+                  checked={donorCreateForm.isAnonymousDefault}
+                  onChange={(e) => setDonorCreateForm(prev => ({ ...prev, isAnonymousDefault: e.target.checked }))}
+                  className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                />
+                Default Anonim
+              </label>
+            </div>
+
+            <div className="flex gap-2 pt-2 text-xs">
+              <button
+                type="button"
+                onClick={closeCreateDonorModal}
+                className="py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-colors cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                type="submit"
+                className="flex-1 py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl shadow-xs transition-colors cursor-pointer"
+              >
+                Simpan Donatur
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
       {/* Donors Table */}
       <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs space-y-4 text-slate-900">

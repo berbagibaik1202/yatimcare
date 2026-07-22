@@ -182,6 +182,55 @@ class DatabaseStore {
     return this.children.find(c => c.id === id);
   }
 
+  public async createChildRecord(childData: {
+    guardianId: string;
+    guardianName: string;
+    guardianPhone?: string;
+    fullName: string;
+    nickname?: string;
+    birthPlace: string;
+    birthDate: string;
+    gender: 'L' | 'P';
+    orphanCategory: Child['orphanCategory'];
+    nik: string;
+    familyCardNumber: string;
+    birthCertificateNumber?: string;
+    address: string;
+    rt: string;
+    rw: string;
+    province: string;
+    city: string;
+    district: string;
+    village: string;
+    postalCode: string;
+    latitude: number;
+    longitude: number;
+    schoolName: string;
+    educationLevel: Child['educationLevel'];
+    schoolGrade?: string;
+    studentNumber?: string;
+    healthCondition: string;
+    specialNeeds?: string;
+    familyMembers: number;
+    homeOwnershipStatus: Child['homeOwnershipStatus'];
+    status?: Child['status'];
+    verificationNotes?: string;
+    photoUrl?: string;
+    homePhotoUrl?: string;
+  }): Promise<Child> {
+    const data = await this.requestJson<Child>('/api/children', {
+      method: 'POST',
+      body: JSON.stringify(childData)
+    }, 'Gagal menambahkan data anak');
+
+    if (!data) {
+      throw new Error('Gagal menambahkan data anak');
+    }
+
+    await this.load(true);
+    return data;
+  }
+
   public async updateChildRecord(id: string, updates: Partial<Child>): Promise<Child> {
     const data = await this.requestJson<Child>(`/api/children/${id}`, {
       method: 'PUT',
@@ -281,6 +330,29 @@ class DatabaseStore {
 
   public getDonorById(id: string): Donor | undefined {
     return this.donors.find(d => d.id === id);
+  }
+
+  public async createDonorRecord(donorData: {
+    fullName: string;
+    donorType: DonorType;
+    institutionName?: string;
+    email: string;
+    phone: string;
+    address?: string;
+    isAnonymousDefault?: boolean;
+    isRecurringDonor?: boolean;
+  }): Promise<Donor> {
+    const data = await this.requestJson<Donor>('/api/donors', {
+      method: 'POST',
+      body: JSON.stringify(donorData)
+    }, 'Gagal menambahkan data donatur');
+
+    if (!data) {
+      throw new Error('Gagal menambahkan data donatur');
+    }
+
+    await this.load(true);
+    return data;
   }
 
   public async updateDonorRecord(id: string, updates: Partial<Donor>): Promise<Donor> {

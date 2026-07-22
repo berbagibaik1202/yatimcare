@@ -30,17 +30,55 @@ interface ChildrenManagerProps {
 
 export const ChildrenManager: React.FC<ChildrenManagerProps> = ({ onRefreshData }) => {
   const childrenList = db.getChildren();
+  const guardiansList = db.getGuardians();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
 
+  const [isCreateChildModalOpen, setIsCreateChildModalOpen] = useState(false);
   const [selectedChildForModal, setSelectedChildForModal] = useState<Child | null>(null);
   const [selectedChildForEdit, setSelectedChildForEdit] = useState<Child | null>(null);
   const [selectedChildForPrint, setSelectedChildForPrint] = useState<Child | undefined>(undefined);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
 
   const [verificationNotes, setVerificationNotes] = useState('');
+  const [childCreateForm, setChildCreateForm] = useState({
+    guardianId: '',
+    guardianName: '',
+    guardianPhone: '',
+    fullName: '',
+    nickname: '',
+    birthPlace: '',
+    birthDate: '',
+    gender: 'L' as 'L' | 'P',
+    orphanCategory: 'yatim' as OrphanCategory,
+    nik: '',
+    familyCardNumber: '',
+    birthCertificateNumber: '',
+    address: '',
+    rt: '00',
+    rw: '00',
+    province: 'Jawa Barat',
+    city: 'Sumedang',
+    district: '',
+    village: '',
+    postalCode: '',
+    latitude: '0',
+    longitude: '0',
+    schoolName: '',
+    educationLevel: 'SD',
+    schoolGrade: '',
+    studentNumber: '',
+    healthCondition: '',
+    specialNeeds: '',
+    familyMembers: '1',
+    homeOwnershipStatus: 'Menumpang',
+    status: 'diajukan' as VerificationStatus,
+    verificationNotes: '',
+    photoUrl: '',
+    homePhotoUrl: ''
+  });
   const [childEditForm, setChildEditForm] = useState({
     fullName: '',
     guardianName: '',
@@ -67,6 +105,122 @@ export const ChildrenManager: React.FC<ChildrenManagerProps> = ({ onRefreshData 
 
     return matchesSearch && matchesCategory && matchesStatus;
   });
+
+  const initializeChildCreateForm = () => {
+    const defaultGuardian = guardiansList[0];
+    setChildCreateForm({
+      guardianId: defaultGuardian?.id ?? '',
+      guardianName: defaultGuardian?.fullName ?? '',
+      guardianPhone: defaultGuardian?.phone ?? '',
+      fullName: '',
+      nickname: '',
+      birthPlace: '',
+      birthDate: '',
+      gender: 'L',
+      orphanCategory: 'yatim',
+      nik: '',
+      familyCardNumber: '',
+      birthCertificateNumber: '',
+      address: '',
+      rt: '00',
+      rw: '00',
+      province: 'Jawa Barat',
+      city: 'Sumedang',
+      district: defaultGuardian?.district ?? '',
+      village: defaultGuardian?.village ?? '',
+      postalCode: defaultGuardian?.postalCode ?? '',
+      latitude: '0',
+      longitude: '0',
+      schoolName: '',
+      educationLevel: 'SD',
+      schoolGrade: '',
+      studentNumber: '',
+      healthCondition: '',
+      specialNeeds: '',
+      familyMembers: '1',
+      homeOwnershipStatus: 'Menumpang',
+      status: 'diajukan',
+      verificationNotes: '',
+      photoUrl: '',
+      homePhotoUrl: ''
+    });
+  };
+
+  const openCreateChildModal = () => {
+    if (guardiansList.length === 0) {
+      alert('Data wali belum tersedia. Tambahkan data wali terlebih dahulu.');
+      return;
+    }
+
+    initializeChildCreateForm();
+    setIsCreateChildModalOpen(true);
+  };
+
+  const closeCreateChildModal = () => {
+    setIsCreateChildModalOpen(false);
+  };
+
+  const handleChildGuardianChange = (guardianId: string) => {
+    const guardian = guardiansList.find(item => item.id === guardianId);
+    setChildCreateForm(prev => ({
+      ...prev,
+      guardianId,
+      guardianName: guardian?.fullName ?? '',
+      guardianPhone: guardian?.phone ?? '',
+      district: guardian?.district ?? prev.district,
+      village: guardian?.village ?? prev.village,
+      postalCode: guardian?.postalCode ?? prev.postalCode
+    }));
+  };
+
+  const handleCreateChild = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    try {
+      await db.createChildRecord({
+        guardianId: childCreateForm.guardianId,
+        guardianName: childCreateForm.guardianName,
+        guardianPhone: childCreateForm.guardianPhone || undefined,
+        fullName: childCreateForm.fullName,
+        nickname: childCreateForm.nickname || undefined,
+        birthPlace: childCreateForm.birthPlace,
+        birthDate: childCreateForm.birthDate,
+        gender: childCreateForm.gender,
+        orphanCategory: childCreateForm.orphanCategory,
+        nik: childCreateForm.nik,
+        familyCardNumber: childCreateForm.familyCardNumber,
+        birthCertificateNumber: childCreateForm.birthCertificateNumber || undefined,
+        address: childCreateForm.address,
+        rt: childCreateForm.rt,
+        rw: childCreateForm.rw,
+        province: childCreateForm.province,
+        city: childCreateForm.city,
+        district: childCreateForm.district,
+        village: childCreateForm.village,
+        postalCode: childCreateForm.postalCode,
+        latitude: Number(childCreateForm.latitude),
+        longitude: Number(childCreateForm.longitude),
+        schoolName: childCreateForm.schoolName,
+        educationLevel: childCreateForm.educationLevel as Child['educationLevel'],
+        schoolGrade: childCreateForm.schoolGrade || undefined,
+        studentNumber: childCreateForm.studentNumber || undefined,
+        healthCondition: childCreateForm.healthCondition,
+        specialNeeds: childCreateForm.specialNeeds || undefined,
+        familyMembers: Number(childCreateForm.familyMembers),
+        homeOwnershipStatus: childCreateForm.homeOwnershipStatus as Child['homeOwnershipStatus'],
+        status: childCreateForm.status,
+        verificationNotes: childCreateForm.verificationNotes || undefined,
+        photoUrl: childCreateForm.photoUrl || undefined,
+        homePhotoUrl: childCreateForm.homePhotoUrl || undefined
+      });
+
+      onRefreshData();
+      setIsCreateChildModalOpen(false);
+      alert('Data anak berhasil ditambahkan.');
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Gagal menambahkan data anak');
+    }
+  };
 
   const openEditChildModal = (child: Child) => {
     setChildEditForm({
@@ -246,6 +400,15 @@ export const ChildrenManager: React.FC<ChildrenManagerProps> = ({ onRefreshData 
               Menunggu: {childrenList.filter(c => c.status === 'menunggu_verifikasi').length}
             </span>
 
+            <button
+              onClick={openCreateChildModal}
+              className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+              title="Tambah Data Anak"
+            >
+              <PlusCircle className="w-3.5 h-3.5" />
+              <span>Tambah Anak</span>
+            </button>
+
             {/* Export Action Buttons */}
             <div className="flex items-center gap-1.5 ml-0 sm:ml-2">
               <button
@@ -416,6 +579,301 @@ export const ChildrenManager: React.FC<ChildrenManagerProps> = ({ onRefreshData 
           </table>
         </div>
       </div>
+
+      {/* Create Child Modal */}
+      {isCreateChildModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 overflow-y-auto">
+          <form onSubmit={handleCreateChild} className="bg-white rounded-3xl max-w-5xl w-full p-6 sm:p-8 shadow-2xl border border-slate-100 my-8 space-y-6">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+              <div>
+                <h3 className="font-serif font-bold text-lg text-slate-900">Tambah Data Anak</h3>
+                <p className="text-xs text-slate-500">Isi data dasar anak dan wali agar langsung tersimpan ke database.</p>
+              </div>
+              <button
+                type="button"
+                onClick={closeCreateChildModal}
+                className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+                aria-label="Tutup Modal"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
+              <label className="space-y-1.5 lg:col-span-2">
+                <span className="font-bold text-slate-700">Wali / Guardian</span>
+                <select
+                  value={childCreateForm.guardianId}
+                  onChange={(e) => handleChildGuardianChange(e.target.value)}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                >
+                  {guardiansList.map(guardian => (
+                    <option key={guardian.id} value={guardian.id}>
+                      {guardian.fullName} - {guardian.relationship}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="space-y-1.5">
+                <span className="font-bold text-slate-700">Nama Wali</span>
+                <input
+                  value={childCreateForm.guardianName}
+                  onChange={(e) => setChildCreateForm(prev => ({ ...prev, guardianName: e.target.value }))}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                />
+              </label>
+              <label className="space-y-1.5">
+                <span className="font-bold text-slate-700">Kontak Wali</span>
+                <input
+                  value={childCreateForm.guardianPhone}
+                  onChange={(e) => setChildCreateForm(prev => ({ ...prev, guardianPhone: e.target.value }))}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                />
+              </label>
+              <label className="space-y-1.5 lg:col-span-2">
+                <span className="font-bold text-slate-700">Nama Anak</span>
+                <input
+                  value={childCreateForm.fullName}
+                  onChange={(e) => setChildCreateForm(prev => ({ ...prev, fullName: e.target.value }))}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                />
+              </label>
+              <label className="space-y-1.5">
+                <span className="font-bold text-slate-700">Nama Panggilan</span>
+                <input
+                  value={childCreateForm.nickname}
+                  onChange={(e) => setChildCreateForm(prev => ({ ...prev, nickname: e.target.value }))}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                />
+              </label>
+              <label className="space-y-1.5">
+                <span className="font-bold text-slate-700">Tempat Lahir</span>
+                <input
+                  value={childCreateForm.birthPlace}
+                  onChange={(e) => setChildCreateForm(prev => ({ ...prev, birthPlace: e.target.value }))}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                />
+              </label>
+              <label className="space-y-1.5">
+                <span className="font-bold text-slate-700">Tanggal Lahir</span>
+                <input
+                  type="date"
+                  value={childCreateForm.birthDate}
+                  onChange={(e) => setChildCreateForm(prev => ({ ...prev, birthDate: e.target.value }))}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                />
+              </label>
+              <label className="space-y-1.5">
+                <span className="font-bold text-slate-700">Jenis Kelamin</span>
+                <select
+                  value={childCreateForm.gender}
+                  onChange={(e) => setChildCreateForm(prev => ({ ...prev, gender: e.target.value as 'L' | 'P' }))}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                >
+                  <option value="L">Laki-laki</option>
+                  <option value="P">Perempuan</option>
+                </select>
+              </label>
+              <label className="space-y-1.5">
+                <span className="font-bold text-slate-700">Kategori</span>
+                <select
+                  value={childCreateForm.orphanCategory}
+                  onChange={(e) => setChildCreateForm(prev => ({ ...prev, orphanCategory: e.target.value as OrphanCategory }))}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                >
+                  <option value="yatim">Yatim</option>
+                  <option value="piatu">Piatu</option>
+                  <option value="yatim_piatu">Yatim Piatu</option>
+                </select>
+              </label>
+              <label className="space-y-1.5">
+                <span className="font-bold text-slate-700">NIK</span>
+                <input
+                  value={childCreateForm.nik}
+                  onChange={(e) => setChildCreateForm(prev => ({ ...prev, nik: e.target.value }))}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                />
+              </label>
+              <label className="space-y-1.5">
+                <span className="font-bold text-slate-700">No KK</span>
+                <input
+                  value={childCreateForm.familyCardNumber}
+                  onChange={(e) => setChildCreateForm(prev => ({ ...prev, familyCardNumber: e.target.value }))}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                />
+              </label>
+              <label className="space-y-1.5 lg:col-span-3">
+                <span className="font-bold text-slate-700">Alamat</span>
+                <textarea
+                  rows={3}
+                  value={childCreateForm.address}
+                  onChange={(e) => setChildCreateForm(prev => ({ ...prev, address: e.target.value }))}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                />
+              </label>
+              <label className="space-y-1.5">
+                <span className="font-bold text-slate-700">RT</span>
+                <input
+                  value={childCreateForm.rt}
+                  onChange={(e) => setChildCreateForm(prev => ({ ...prev, rt: e.target.value }))}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                />
+              </label>
+              <label className="space-y-1.5">
+                <span className="font-bold text-slate-700">RW</span>
+                <input
+                  value={childCreateForm.rw}
+                  onChange={(e) => setChildCreateForm(prev => ({ ...prev, rw: e.target.value }))}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                />
+              </label>
+              <label className="space-y-1.5">
+                <span className="font-bold text-slate-700">Provinsi</span>
+                <input
+                  value={childCreateForm.province}
+                  onChange={(e) => setChildCreateForm(prev => ({ ...prev, province: e.target.value }))}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                />
+              </label>
+              <label className="space-y-1.5">
+                <span className="font-bold text-slate-700">Kota / Kabupaten</span>
+                <input
+                  value={childCreateForm.city}
+                  onChange={(e) => setChildCreateForm(prev => ({ ...prev, city: e.target.value }))}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                />
+              </label>
+              <label className="space-y-1.5">
+                <span className="font-bold text-slate-700">Kecamatan</span>
+                <input
+                  value={childCreateForm.district}
+                  onChange={(e) => setChildCreateForm(prev => ({ ...prev, district: e.target.value }))}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                />
+              </label>
+              <label className="space-y-1.5">
+                <span className="font-bold text-slate-700">Desa / Kelurahan</span>
+                <input
+                  value={childCreateForm.village}
+                  onChange={(e) => setChildCreateForm(prev => ({ ...prev, village: e.target.value }))}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                />
+              </label>
+              <label className="space-y-1.5">
+                <span className="font-bold text-slate-700">Kode Pos</span>
+                <input
+                  value={childCreateForm.postalCode}
+                  onChange={(e) => setChildCreateForm(prev => ({ ...prev, postalCode: e.target.value }))}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                />
+              </label>
+              <label className="space-y-1.5">
+                <span className="font-bold text-slate-700">Latitude</span>
+                <input
+                  value={childCreateForm.latitude}
+                  onChange={(e) => setChildCreateForm(prev => ({ ...prev, latitude: e.target.value }))}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                />
+              </label>
+              <label className="space-y-1.5">
+                <span className="font-bold text-slate-700">Longitude</span>
+                <input
+                  value={childCreateForm.longitude}
+                  onChange={(e) => setChildCreateForm(prev => ({ ...prev, longitude: e.target.value }))}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                />
+              </label>
+              <label className="space-y-1.5">
+                <span className="font-bold text-slate-700">Sekolah</span>
+                <input
+                  value={childCreateForm.schoolName}
+                  onChange={(e) => setChildCreateForm(prev => ({ ...prev, schoolName: e.target.value }))}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                />
+              </label>
+              <label className="space-y-1.5">
+                <span className="font-bold text-slate-700">Jenjang</span>
+                <select
+                  value={childCreateForm.educationLevel}
+                  onChange={(e) => setChildCreateForm(prev => ({ ...prev, educationLevel: e.target.value }))}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                >
+                  <option value="Belum Sekolah">Belum Sekolah</option>
+                  <option value="TK">TK</option>
+                  <option value="SD">SD</option>
+                  <option value="SMP">SMP</option>
+                  <option value="SMA/K">SMA/K</option>
+                  <option value="Perguruan Tinggi">Perguruan Tinggi</option>
+                </select>
+              </label>
+              <label className="space-y-1.5">
+                <span className="font-bold text-slate-700">Kelas</span>
+                <input
+                  value={childCreateForm.schoolGrade}
+                  onChange={(e) => setChildCreateForm(prev => ({ ...prev, schoolGrade: e.target.value }))}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                />
+              </label>
+              <label className="space-y-1.5">
+                <span className="font-bold text-slate-700">Kondisi Kesehatan</span>
+                <input
+                  value={childCreateForm.healthCondition}
+                  onChange={(e) => setChildCreateForm(prev => ({ ...prev, healthCondition: e.target.value }))}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                />
+              </label>
+              <label className="space-y-1.5">
+                <span className="font-bold text-slate-700">Jumlah Keluarga</span>
+                <input
+                  type="number"
+                  min="1"
+                  value={childCreateForm.familyMembers}
+                  onChange={(e) => setChildCreateForm(prev => ({ ...prev, familyMembers: e.target.value }))}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                />
+              </label>
+              <label className="space-y-1.5">
+                <span className="font-bold text-slate-700">Status Hunian</span>
+                <select
+                  value={childCreateForm.homeOwnershipStatus}
+                  onChange={(e) => setChildCreateForm(prev => ({ ...prev, homeOwnershipStatus: e.target.value }))}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                >
+                  <option value="Milik Sendiri">Milik Sendiri</option>
+                  <option value="Sewa">Sewa</option>
+                  <option value="Menumpang">Menumpang</option>
+                  <option value="Lainnya">Lainnya</option>
+                </select>
+              </label>
+              <label className="sm:col-span-3 space-y-1.5">
+                <span className="font-bold text-slate-700">Catatan Verifikasi</span>
+                <textarea
+                  rows={3}
+                  value={childCreateForm.verificationNotes}
+                  onChange={(e) => setChildCreateForm(prev => ({ ...prev, verificationNotes: e.target.value }))}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                />
+              </label>
+            </div>
+
+            <div className="flex gap-2 pt-2 text-xs">
+              <button
+                type="button"
+                onClick={closeCreateChildModal}
+                className="py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-colors cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                type="submit"
+                className="flex-1 py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl shadow-xs transition-colors cursor-pointer"
+              >
+                Simpan Anak
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
       {/* Verification & Detail Modal */}
       {selectedChildForModal && (
