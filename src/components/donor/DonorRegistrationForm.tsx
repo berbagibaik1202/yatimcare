@@ -101,7 +101,7 @@ export const DonorRegistrationForm: React.FC<DonorRegistrationFormProps> = ({
       <div className="bg-white rounded-[32px] border border-slate-200/80 shadow-xl overflow-hidden text-slate-900 relative">
         
         {/* Header Section */}
-        <div className="bg-gradient-to-r from-emerald-900 via-emerald-800 to-teal-900 text-white p-6 sm:p-8 relative overflow-hidden">
+        <div className="bg-gradient-to-r from-emerald-800 via-emerald-700 to-teal-800 text-white p-6 sm:p-8 relative overflow-hidden">
           {onClose && (
             <button
               onClick={onClose}
@@ -114,7 +114,7 @@ export const DonorRegistrationForm: React.FC<DonorRegistrationFormProps> = ({
           )}
 
           <div className="space-y-2 max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-400/20 text-emerald-200 border border-emerald-400/30 text-xs font-semibold uppercase tracking-wider">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/20 text-white border border-white/30 text-xs font-semibold uppercase tracking-wider">
               <Sparkles className="w-3.5 h-3.5 text-amber-300" />
               <span>Program Donatur Tetap & Orang Tua Asuh Yatim</span>
             </div>
@@ -148,7 +148,7 @@ export const DonorRegistrationForm: React.FC<DonorRegistrationFormProps> = ({
             </div>
 
             {/* Digital Donor Pass Card */}
-            <div className="max-w-md mx-auto bg-gradient-to-br from-slate-900 to-emerald-950 text-white rounded-3xl p-6 shadow-xl border border-emerald-500/30 text-left space-y-4 relative overflow-hidden">
+            <div className="max-w-md mx-auto bg-gradient-to-br from-emerald-800 via-emerald-700 to-teal-800 text-white rounded-3xl p-6 shadow-xl border border-emerald-600 text-left space-y-4 relative overflow-hidden">
               <div className="flex justify-between items-start border-b border-white/10 pb-3">
                 <div>
                   <p className="text-[10px] text-emerald-300 uppercase font-bold tracking-wider">Kartu Donatur Digital</p>

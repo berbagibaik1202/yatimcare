@@ -115,34 +115,34 @@ export const OrphanMap: React.FC<OrphanMapProps> = ({
   }, [filteredChildren, showSensitiveData]);
 
   return (
-    <div className="bg-[#161616] rounded-[32px] p-6 sm:p-8 shadow-2xl border border-white/10 text-white space-y-6">
+    <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-xs border border-slate-200/80 text-slate-900 space-y-6">
       
       {/* Header & Controls */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-white/10">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-slate-100">
         <div>
           <div className="flex items-center gap-2.5">
-            <div className="p-2.5 rounded-2xl bg-[#CCFF00] text-black">
+            <div className="p-2.5 rounded-2xl bg-emerald-100 text-emerald-800">
               <MapPin className="w-5 h-5" />
             </div>
-            <h3 className="font-sans font-black text-xl text-white">Peta Sebaran Penerima Bantuan</h3>
+            <h3 className="font-sans font-black text-xl text-slate-900">Peta Sebaran Penerima Bantuan</h3>
           </div>
-          <p className="text-xs text-white/50 mt-1">
+          <p className="text-xs text-slate-500 mt-1">
             Visualisasi pemetaan lokasi rumah anak yatim, piatu, dan yatim piatu terverifikasi.
           </p>
         </div>
 
         {/* Legend / Stats Badges */}
         <div className="flex flex-wrap items-center gap-2 text-xs">
-          <div className="px-3.5 py-1.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+          <div className="px-3.5 py-1.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 font-bold flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-600" />
             Yatim ({yatimCount})
           </div>
-          <div className="px-3.5 py-1.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 font-bold flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
+          <div className="px-3.5 py-1.5 rounded-full bg-blue-100 text-blue-800 border border-blue-200 font-bold flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-blue-600" />
             Piatu ({piatuCount})
           </div>
-          <div className="px-3.5 py-1.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/20 font-bold flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-red-500" />
+          <div className="px-3.5 py-1.5 rounded-full bg-red-100 text-red-800 border border-red-200 font-bold flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-red-600" />
             Yatim Piatu ({yatimPiatuCount})
           </div>
         </div>
@@ -151,14 +151,14 @@ export const OrphanMap: React.FC<OrphanMapProps> = ({
       {/* Filters Bar */}
       <div className="py-2 flex flex-wrap items-center justify-between gap-3 text-xs">
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-1.5 text-white/60 font-medium">
-            <Filter className="w-4 h-4 text-[#CCFF00]" />
+          <div className="flex items-center gap-1.5 text-slate-600 font-medium">
+            <Filter className="w-4 h-4 text-emerald-600" />
             <span>Filter Kategori:</span>
           </div>
           <select
             value={filterCategory}
             onChange={(e) => setFilterCategory(e.target.value)}
-            className="px-3.5 py-2 rounded-xl border border-white/10 bg-[#222222] text-white font-semibold focus:ring-2 focus:ring-[#CCFF00] focus:outline-hidden"
+            className="px-3.5 py-2 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
           >
             <option value="all">Semua Kategori</option>
             <option value="yatim">Yatim (Ayah Meninggal)</option>
@@ -169,7 +169,7 @@ export const OrphanMap: React.FC<OrphanMapProps> = ({
           <select
             value={filterDistrict}
             onChange={(e) => setFilterDistrict(e.target.value)}
-            className="px-3.5 py-2 rounded-xl border border-white/10 bg-[#222222] text-white font-semibold focus:ring-2 focus:ring-[#CCFF00] focus:outline-hidden"
+            className="px-3.5 py-2 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
           >
             <option value="all">Semua Kecamatan</option>
             {districts.map(d => (
@@ -179,15 +179,15 @@ export const OrphanMap: React.FC<OrphanMapProps> = ({
         </div>
 
         {/* Protection Notice */}
-        <div className="flex items-center gap-1.5 text-white/60 bg-white/5 border border-white/10 px-3.5 py-1.5 rounded-xl">
+        <div className="flex items-center gap-1.5 text-slate-600 bg-slate-100 border border-slate-200 px-3.5 py-1.5 rounded-xl">
           {showSensitiveData ? (
             <>
-              <Eye className="w-3.5 h-3.5 text-[#CCFF00]" />
-              <span className="font-bold text-[#CCFF00]">Akses Pengurus (Data Unmasked)</span>
+              <Eye className="w-3.5 h-3.5 text-emerald-700" />
+              <span className="font-bold text-emerald-800">Akses Pengurus (Data Unmasked)</span>
             </>
           ) : (
             <>
-              <ShieldCheck className="w-3.5 h-3.5 text-white/60" />
+              <ShieldCheck className="w-3.5 h-3.5 text-slate-500" />
               <span>Titik Diacak & Identitas Terproteksi</span>
             </>
           )}
@@ -195,14 +195,14 @@ export const OrphanMap: React.FC<OrphanMapProps> = ({
       </div>
 
       {/* Map Element */}
-      <div className="relative w-full h-[450px] rounded-2xl overflow-hidden border border-white/10 shadow-inner z-10">
+      <div className="relative w-full h-[450px] rounded-2xl overflow-hidden border border-slate-200 shadow-inner z-10">
         <div ref={mapContainerRef} className="w-full h-full" />
       </div>
 
       {/* Footer Info */}
-      <div className="mt-4 flex items-center justify-between text-xs text-white/40">
+      <div className="mt-4 flex items-center justify-between text-xs text-slate-500">
         <p>Menampilkan {filteredChildren.length} titik lokasi anak dari total {childrenData.length} data terdaftar.</p>
-        <p className="font-bold text-[#CCFF00]">OpenStreetMap & Leaflet Digital Mapping</p>
+        <p className="font-bold text-emerald-700">OpenStreetMap & Leaflet Digital Mapping</p>
       </div>
 
     </div>

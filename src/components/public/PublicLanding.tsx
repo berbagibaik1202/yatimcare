@@ -184,19 +184,19 @@ export const PublicLanding: React.FC<PublicLandingProps> = ({
 
       {/* DONOR REGISTRATION PROMOTIONAL BANNER */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-gradient-to-r from-emerald-950 via-slate-900 to-emerald-900 text-white rounded-[32px] p-8 sm:p-10 border border-emerald-500/20 shadow-xl flex flex-col lg:flex-row items-center justify-between gap-8 relative overflow-hidden">
+        <div className="bg-gradient-to-r from-emerald-800 via-emerald-700 to-teal-800 text-white rounded-3xl p-8 sm:p-10 border border-emerald-600 shadow-md flex flex-col lg:flex-row items-center justify-between gap-8 relative overflow-hidden">
           <div className="space-y-4 max-w-2xl text-left relative z-10">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-bold uppercase tracking-wider">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/20 text-white border border-white/30 text-xs font-bold uppercase tracking-wider">
               <Award className="w-4 h-4 text-amber-300" />
               <span>Program Orang Tua Asuh & Donatur Rutin</span>
             </div>
             <h2 className="font-serif font-bold text-2xl sm:text-3xl text-white">
               Ingin Menjadi Donatur Tetap atau Orang Tua Asuh Anak Yatim?
             </h2>
-            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-normal">
+            <p className="text-xs sm:text-sm text-emerald-100 leading-relaxed font-normal">
               Daftarkan diri Anda atau instansi Anda sekarang. Dapatkan akses dashboard laporan perkembangan anak binaan, bukti kuitansi digital, dan kepastian penyaluran bantuan tepat sasaran setiap bulannya.
             </p>
-            <div className="flex flex-wrap items-center gap-4 text-xs font-semibold text-emerald-200">
+            <div className="flex flex-wrap items-center gap-4 text-xs font-semibold text-emerald-100">
               <span className="flex items-center gap-1.5">
                 <CheckCircle2 className="w-4 h-4 text-amber-300" /> Santunan Pendidikan & Gizi
               </span>
@@ -210,7 +210,7 @@ export const PublicLanding: React.FC<PublicLandingProps> = ({
             <button
               id="banner-pendaftaran-donatur-btn"
               onClick={() => onNavigate('pendaftaran-donatur')}
-              className="px-8 py-4 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs sm:text-sm uppercase tracking-wider rounded-2xl shadow-xl transition-all flex items-center gap-2.5 cursor-pointer active:scale-98"
+              className="px-8 py-4 bg-amber-400 hover:bg-amber-500 text-slate-950 font-black text-xs sm:text-sm uppercase tracking-wider rounded-2xl shadow-md transition-all flex items-center gap-2.5 cursor-pointer active:scale-98"
             >
               <UserCheck className="w-5 h-5 text-slate-950" />
               <span>Form Pendaftaran Donatur →</span>
