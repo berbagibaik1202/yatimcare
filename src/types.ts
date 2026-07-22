@@ -291,6 +291,9 @@ export interface NewsItem {
   category: 'Kegiatan' | 'Berita' | 'Penyaluran';
   publishedAt: string;
   author: string;
+  isPublished?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface GalleryItem {

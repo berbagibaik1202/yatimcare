@@ -29,9 +29,12 @@ function mapNewsItem(item: any) {
     summary: item.summary,
     content: item.content,
     thumbnail: item.coverImage ?? 'https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1200&q=80',
-    category: 'Berita',
-    publishedAt: item.publishedAt ? item.publishedAt.toISOString() : new Date().toISOString(),
-    author: item.createdBy?.name ?? 'Tim YatimCare'
+    category: item.isPublished ? 'Berita' : 'Kegiatan',
+    publishedAt: (item.publishedAt ?? item.createdAt).toISOString(),
+    author: item.createdBy?.name ?? 'Tim YatimCare',
+    isPublished: item.isPublished,
+    createdAt: item.createdAt.toISOString(),
+    updatedAt: item.updatedAt.toISOString()
   };
 }
 
@@ -116,6 +119,7 @@ router.get(
     const successfulDonations = donations.filter((donation: any) => donation.paymentStatus === 'berhasil');
     const approvedExpenses = expenses.filter((expense: any) => expense.status === 'dibayarkan' || expense.status === 'disetujui');
     const activeChildren = visibleChildren.filter((child: any) => child.status === 'aktif');
+    const visibleNews = currentUser ? news : news.filter((item: any) => item.isPublished);
 
     res.json({
       data: {
@@ -327,7 +331,7 @@ router.get(
           logoUrl: undefined
         })),
         auditLogs: visibleAuditLogs.map((entry: any) => mapAuditLog(entry)),
-        news: news.map((item: any) => mapNewsItem(item)),
+        news: visibleNews.map((item: any) => mapNewsItem(item)),
         gallery: gallery.map((item: any) => mapGalleryItem(item)),
         systemSettings: systemSettings.map((setting: any) => ({
           key: setting.key,

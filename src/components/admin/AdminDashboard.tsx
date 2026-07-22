@@ -3,6 +3,7 @@ import { db } from '../../services/dbStore';
 import { ChildrenManager } from './ChildrenManager';
 import { GuardiansManager } from './GuardiansManager';
 import { ProgramsManager } from './ProgramsManager';
+import { NewsManager } from './NewsManager';
 import { SurveyManager } from './SurveyManager';
 import { AidDistributionManager } from './AidDistributionManager';
 import { DonationsManager } from '../donations/DonationsManager';
@@ -24,14 +25,15 @@ import {
   UserCheck,
   UsersRound,
   Settings2,
-  Shield
+  Shield,
+  Newspaper
 } from 'lucide-react';
 
 interface AdminDashboardProps {
   onRefreshData: () => void;
 }
 
-type AdminTabId = 'overview' | 'children' | 'guardians' | 'programs' | 'donors' | 'survey' | 'aid' | 'donations' | 'finance' | 'audit' | 'users' | 'settings';
+type AdminTabId = 'overview' | 'children' | 'guardians' | 'programs' | 'news' | 'donors' | 'survey' | 'aid' | 'donations' | 'finance' | 'audit' | 'users' | 'settings';
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onRefreshData }) => {
   const [activeAdminSubTab, setActiveAdminSubTab] = useState<AdminTabId>('overview');
@@ -55,6 +57,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onRefreshData })
             { id: 'children', label: 'Data Anak & Verifikasi', icon: Users },
             { id: 'guardians', label: 'Data Wali', icon: UsersRound },
             { id: 'programs', label: 'Program Donasi', icon: BookOpen },
+            { id: 'news', label: 'Berita & Dokumentasi', icon: Newspaper },
             { id: 'donors', label: 'Data Donatur', icon: UserCheck },
             { id: 'survey', label: 'Survei Lapangan', icon: MapPin },
             { id: 'aid', label: 'Penyaluran Bantuan', icon: Heart },
@@ -248,6 +251,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onRefreshData })
                   </button>
 
                   <button
+                    onClick={() => setActiveAdminSubTab('news')}
+                    className="p-5 rounded-2xl bg-slate-50 hover:bg-emerald-50 hover:border-emerald-200 border border-slate-200 text-left transition-all cursor-pointer group"
+                  >
+                    <Newspaper className="w-5 h-5 text-emerald-600 mb-2" />
+                    <p className="font-bold text-sm text-slate-900 group-hover:text-emerald-800">Berita & Dokumentasi &gt;</p>
+                    <p className="font-normal text-slate-500 text-[11px] mt-0.5">Kelola konten berita yang tampil di landing page.</p>
+                  </button>
+
+                  <button
                     onClick={() => setActiveAdminSubTab('users')}
                     className="p-5 rounded-2xl bg-slate-50 hover:bg-emerald-50 hover:border-emerald-200 border border-slate-200 text-left transition-all cursor-pointer group"
                   >
@@ -274,6 +286,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onRefreshData })
       {activeAdminSubTab === 'children' && !isTreasurer && <ChildrenManager onRefreshData={onRefreshData} />}
       {activeAdminSubTab === 'guardians' && !isTreasurer && <GuardiansManager onRefreshData={onRefreshData} />}
       {activeAdminSubTab === 'programs' && canManageAdminUsers && <ProgramsManager onRefreshData={onRefreshData} />}
+      {activeAdminSubTab === 'news' && canManageAdminUsers && <NewsManager onRefreshData={onRefreshData} />}
       {activeAdminSubTab === 'donors' && <DonorsListManager onRefreshData={onRefreshData} />}
       {activeAdminSubTab === 'survey' && !isTreasurer && <SurveyManager onRefreshData={onRefreshData} />}
       {activeAdminSubTab === 'aid' && <AidDistributionManager onRefreshData={onRefreshData} />}

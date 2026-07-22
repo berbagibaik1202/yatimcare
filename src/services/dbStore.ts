@@ -380,6 +380,60 @@ class DatabaseStore {
     await this.load(true);
   }
 
+  // --- NEWS ---
+  public async createNewsRecord(newsData: {
+    title: string;
+    summary: string;
+    content: string;
+    coverImage?: string;
+    publishedAt?: string;
+    isPublished?: boolean;
+  }): Promise<NewsItem> {
+    const data = await this.requestJson<NewsItem>('/api/news', {
+      method: 'POST',
+      body: JSON.stringify(newsData)
+    }, 'Gagal menambahkan konten berita');
+
+    if (!data) {
+      throw new Error('Gagal menambahkan konten berita');
+    }
+
+    await this.load(true);
+    return data;
+  }
+
+  public async updateNewsRecord(
+    id: string,
+    updates: Partial<{
+      title: string;
+      summary: string;
+      content: string;
+      coverImage?: string;
+      publishedAt?: string;
+      isPublished?: boolean;
+    }>
+  ): Promise<NewsItem> {
+    const data = await this.requestJson<NewsItem>(`/api/news/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(updates)
+    }, 'Gagal memperbarui konten berita');
+
+    if (!data) {
+      throw new Error('Gagal memperbarui konten berita');
+    }
+
+    await this.load(true);
+    return data;
+  }
+
+  public async deleteNewsRecord(id: string): Promise<void> {
+    await this.requestJson<void>(`/api/news/${id}`, {
+      method: 'DELETE'
+    }, 'Gagal menghapus konten berita');
+
+    await this.load(true);
+  }
+
   // --- CHILDREN ---
   public getChildren(): Child[] {
     return this.children;
