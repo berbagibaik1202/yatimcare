@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { db } from '../../services/dbStore';
 import { Program, ProgramCategory, ProgramStatus } from '../../types';
 import {
@@ -10,7 +10,6 @@ import {
   X,
   Save,
   Image,
-  Target,
   Sparkles,
   Calendar,
   AlertTriangle,
@@ -63,6 +62,7 @@ export const ProgramsManager: React.FC<ProgramsManagerProps> = ({ onRefreshData 
   const donations = db.getDonations();
   const expenses = db.getExpenses();
   const aidDistributions = db.getAidDistributions();
+  const thumbnailInputRef = useRef<HTMLInputElement>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProgramForEdit, setSelectedProgramForEdit] = useState<Program | null>(null);
@@ -148,6 +148,43 @@ export const ProgramsManager: React.FC<ProgramsManagerProps> = ({ onRefreshData 
     setIsModalOpen(false);
     setSelectedProgramForEdit(null);
     setFormError(null);
+  };
+
+  const handleThumbnailFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    if (!file.type.startsWith('image/')) {
+      alert('File thumbnail harus berupa gambar.');
+      e.target.value = '';
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      alert('Ukuran gambar terlalu besar. Maksimal 2 MB.');
+      e.target.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = typeof reader.result === 'string' ? reader.result : '';
+      setFormState(prev => ({ ...prev, thumbnail: result }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handlePickThumbnail = () => {
+    thumbnailInputRef.current?.click();
+  };
+
+  const handleClearThumbnail = () => {
+    setFormState(prev => ({ ...prev, thumbnail: defaultThumbnail }));
+    if (thumbnailInputRef.current) {
+      thumbnailInputRef.current.value = '';
+    }
   };
 
   const openCreateModal = () => {
@@ -508,22 +545,59 @@ export const ProgramsManager: React.FC<ProgramsManagerProps> = ({ onRefreshData 
                 </label>
 
                 <label className="block space-y-2 lg:col-span-2">
-                  <span className="text-sm font-bold text-slate-800">Thumbnail URL</span>
-                  <div className="flex items-center gap-3">
-                    <div className="w-16 h-16 rounded-2xl bg-slate-100 border border-slate-200 overflow-hidden flex items-center justify-center shrink-0">
-                      {formState.thumbnail ? (
-                        <img src={formState.thumbnail} alt="Thumbnail preview" className="w-full h-full object-cover" />
-                      ) : (
-                        <Image className="w-5 h-5 text-slate-400" />
-                      )}
+                  <span className="text-sm font-bold text-slate-800">Thumbnail Program</span>
+                  <div className="grid grid-cols-1 lg:grid-cols-[160px_1fr] gap-3 items-start">
+                    <div className="rounded-3xl border border-slate-200 bg-slate-50 p-3">
+                      <div className="w-full aspect-[4/3] rounded-2xl bg-white border border-slate-200 overflow-hidden flex items-center justify-center">
+                        {formState.thumbnail ? (
+                          <img src={formState.thumbnail} alt="Thumbnail preview" className="w-full h-full object-cover" />
+                        ) : (
+                          <Image className="w-6 h-6 text-slate-400" />
+                        )}
+                      </div>
                     </div>
-                    <input
-                      type="url"
-                      value={formState.thumbnail}
-                      onChange={(e) => setFormState(prev => ({ ...prev, thumbnail: e.target.value }))}
-                      placeholder="https://..."
-                      className="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-slate-50 text-slate-800 font-medium focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
-                    />
+
+                    <div className="space-y-3">
+                      <input
+                        ref={thumbnailInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleThumbnailFileChange}
+                        className="hidden"
+                      />
+
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={handlePickThumbnail}
+                          className="px-4 py-3 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-2xl shadow-xs transition-colors flex items-center gap-2 cursor-pointer"
+                        >
+                          <Image className="w-4 h-4" />
+                          <span>Pilih File Gambar</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={handleClearThumbnail}
+                          className="px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-2xl shadow-xs transition-colors flex items-center gap-2 cursor-pointer"
+                        >
+                          <X className="w-4 h-4" />
+                          <span>Reset Thumbnail</span>
+                        </button>
+                      </div>
+
+                      <input
+                        type="url"
+                        value={formState.thumbnail}
+                        onChange={(e) => setFormState(prev => ({ ...prev, thumbnail: e.target.value }))}
+                        placeholder="Atau tempel URL gambar di sini"
+                        className="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-slate-50 text-slate-800 font-medium focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                      />
+
+                      <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-4 text-xs text-slate-500 leading-relaxed">
+                        Upload gambar langsung akan disimpan sebagai data URL. Jika ingin memakai gambar dari internet, isi URL di bawah.
+                      </div>
+                    </div>
                   </div>
                 </label>
 
