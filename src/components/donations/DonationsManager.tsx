@@ -39,10 +39,14 @@ export const DonationsManager: React.FC<DonationsManagerProps> = ({ onRefreshDat
     return matchesSearch && matchesStatus;
   });
 
-  const handleVerify = (id: string, status: 'berhasil' | 'ditolak') => {
-    db.verifyDonation(id, status);
-    onRefreshData();
-    alert(`Status transaksi donasi berhasil diubah menjadi: ${status.toUpperCase()}`);
+  const handleVerify = async (id: string, status: 'berhasil' | 'ditolak') => {
+    try {
+      await db.verifyDonation(id, status);
+      onRefreshData();
+      alert(`Status transaksi donasi berhasil diubah menjadi: ${status.toUpperCase()}`);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Gagal memverifikasi donasi');
+    }
   };
 
   const handlePrintReceipt = (donation: Donation) => {

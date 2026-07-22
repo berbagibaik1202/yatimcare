@@ -1,0 +1,122 @@
+import { Router } from 'express';
+import { Prisma } from '../../generated/prisma.js';
+import { z } from 'zod';
+import { prisma } from '../../lib/prisma.js';
+import { asyncHandler } from '../../lib/asyncHandler.js';
+
+const router = Router();
+
+const donationCreateSchema = z.object({
+  donorId: z.string().optional(),
+  donorName: z.string().min(1),
+  donorEmail: z.string().email(),
+  donorPhone: z.string().min(5),
+  programId: z.string().min(1),
+  programTitle: z.string().min(1),
+  donationType: z.enum(['umum', 'pendidikan', 'santunan', 'zakat', 'infak', 'sedekah', 'program_khusus']),
+  amount: z.coerce.number().positive(),
+  paymentMethod: z.enum(['transfer_bank', 'qris', 'e_wallet', 'tunai']),
+  destinationAccount: z.string().min(1),
+  paymentReference: z.string().optional(),
+  paymentProofUrl: z.string().optional(),
+  isAnonymous: z.boolean().optional(),
+  donorMessage: z.string().optional()
+});
+
+function mapDonationRecord(donation: any) {
+  return {
+    id: donation.id,
+    transactionNumber: donation.transactionNumber,
+    donorId: donation.donorId ?? undefined,
+    donorName: donation.donorName,
+    donorEmail: donation.donorEmail,
+    donorPhone: donation.donorPhone,
+    programId: donation.programId,
+    programTitle: donation.programTitle,
+    donationType: donation.donationType,
+    amount: Number(donation.amount),
+    paymentMethod: donation.paymentMethod,
+    destinationAccount: donation.destinationAccount,
+    paymentReference: donation.paymentReference ?? undefined,
+    paymentProofUrl: donation.paymentProofUrl ?? undefined,
+    paymentStatus: donation.paymentStatus,
+    isAnonymous: donation.isAnonymous,
+    donorMessage: donation.donorMessage ?? undefined,
+    donatedAt: donation.donatedAt.toISOString(),
+    verifiedBy: donation.verifiedBy?.name ?? undefined,
+    verifiedAt: donation.verifiedAt?.toISOString()
+  };
+}
+
+router.post(
+  '/',
+  asyncHandler(async (req, res) => {
+    const input = donationCreateSchema.parse(req.body);
+    const year = new Date().getFullYear();
+    const count = await prisma.donation.count();
+    const transactionNumber = `TRX-${year}${String(count + 1).padStart(4, '0')}`;
+    const donorCount = await prisma.donor.count();
+
+    const donor =
+      input.donorId
+        ? await prisma.donor.findUnique({ where: { id: input.donorId } })
+        : await prisma.donor.findUnique({ where: { email: input.donorEmail } });
+
+    const donorRecord = donor
+      ? donor
+      : await prisma.donor.create({
+          data: {
+            donorNumber: `DNR-${year}-${String(donorCount + 1).padStart(3, '0')}`,
+            fullName: input.donorName,
+            donorType: 'individu',
+            email: input.donorEmail,
+            phone: input.donorPhone,
+            isAnonymousDefault: input.isAnonymous ?? false,
+            isRecurringDonor: false
+          }
+        });
+
+    const created = await prisma.donation.create({
+      data: {
+        transactionNumber,
+        donorId: donorRecord.id,
+        donorName: input.donorName,
+        donorEmail: input.donorEmail,
+        donorPhone: input.donorPhone,
+        programId: input.programId,
+        programTitle: input.programTitle,
+        donationType: input.donationType,
+        amount: new Prisma.Decimal(input.amount),
+        paymentMethod: input.paymentMethod,
+        destinationAccount: input.destinationAccount,
+        paymentReference: input.paymentReference,
+        paymentProofUrl: input.paymentProofUrl,
+        isAnonymous: input.isAnonymous ?? false,
+        donorMessage: input.donorMessage,
+        paymentStatus: 'menunggu_verifikasi'
+      },
+      include: {
+        verifiedBy: true
+      }
+    });
+
+    await prisma.auditLog.create({
+      data: {
+        action: 'SUBMIT_DONASI',
+        entityType: 'Donation',
+        entityId: created.id,
+        description: `Donasi publik baru Rp ${input.amount.toLocaleString('id-ID')} (${transactionNumber})`,
+        metadata: {
+          amount: input.amount,
+          transactionNumber,
+          paymentMethod: input.paymentMethod,
+          destinationAccount: input.destinationAccount
+        }
+      }
+    });
+
+    res.status(201).json({ data: mapDonationRecord(created) });
+  })
+);
+
+export default router;

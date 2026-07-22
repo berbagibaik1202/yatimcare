@@ -261,6 +261,70 @@ class DatabaseStore {
     return undefined;
   }
 
+  public getDonationBankInfo(): { bankName: string; accountNumber: string; accountHolder: string } | undefined {
+    const bankName = this.getSystemSettingValue('donation_bank_name');
+    const accountNumber = this.getSystemSettingValue('donation_bank_number');
+    const accountHolder = this.getSystemSettingValue('donation_bank_holder');
+
+    if (
+      typeof bankName === 'string' && bankName.trim() &&
+      typeof accountNumber === 'string' && accountNumber.trim() &&
+      typeof accountHolder === 'string' && accountHolder.trim()
+    ) {
+      return {
+        bankName: bankName.trim(),
+        accountNumber: accountNumber.trim(),
+        accountHolder: accountHolder.trim()
+      };
+    }
+
+    const firstActiveBank = this.bankAccounts.find(account => account.isActive);
+    if (firstActiveBank) {
+      return {
+        bankName: firstActiveBank.bankName,
+        accountNumber: firstActiveBank.accountNumber,
+        accountHolder: firstActiveBank.accountHolder
+      };
+    }
+
+    return undefined;
+  }
+
+  public getDonationBankAccounts(): BankAccount[] {
+    const primaryAccount = this.getDonationBankInfo();
+    const activeBankAccounts = this.bankAccounts.filter(account => account.isActive);
+
+    const options: BankAccount[] = [];
+
+    if (primaryAccount) {
+      options.push({
+        id: 'system-donation-bank',
+        bankName: primaryAccount.bankName,
+        accountNumber: primaryAccount.accountNumber,
+        accountHolder: primaryAccount.accountHolder,
+        branch: undefined,
+        isActive: true,
+        isPublic: true,
+        logoUrl: undefined
+      });
+    }
+
+    for (const account of activeBankAccounts) {
+      if (options.some(item => item.accountNumber === account.accountNumber)) {
+        continue;
+      }
+
+      options.push({
+        ...account,
+        branch: undefined,
+        isPublic: true,
+        logoUrl: undefined
+      });
+    }
+
+    return options;
+  }
+
   public async updateSystemSetting(
     key: string,
     value: SystemSetting['value'],
@@ -540,68 +604,32 @@ class DatabaseStore {
     return this.donations;
   }
 
-  public addDonation(donationData: Omit<Donation, 'id' | 'transactionNumber' | 'paymentStatus' | 'donatedAt'>): Donation {
-    const trxNum = `TRX-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${String(this.donations.length + 1).padStart(3, '0')}`;
-    const newDonation: Donation = {
-      ...donationData,
-      id: `don-${Date.now()}`,
-      transactionNumber: trxNum,
-      paymentStatus: 'menunggu_verifikasi',
-      donatedAt: new Date().toISOString()
-    };
+  public async submitDonation(donationData: Omit<Donation, 'id' | 'transactionNumber' | 'paymentStatus' | 'donatedAt'>): Promise<Donation> {
+    const data = await this.requestJson<Donation>('/api/public/donations', {
+      method: 'POST',
+      body: JSON.stringify(donationData)
+    }, 'Gagal mengirim donasi');
 
-    // Link or create donor if not exists
-    let donor = this.donors.find(d => d.email === donationData.donorEmail);
-    if (!donor) {
-      donor = {
-        id: `dnr-${Date.now()}`,
-        donorNumber: `DNR-${new Date().getFullYear()}-${String(this.donors.length + 1).padStart(3, '0')}`,
-        fullName: donationData.donorName,
-        donorType: donationData.isAnonymous ? 'anonim' : 'individu',
-        email: donationData.donorEmail,
-        phone: donationData.donorPhone,
-        isAnonymousDefault: donationData.isAnonymous,
-        isRecurringDonor: false,
-        verificationStatus: 'verified',
-        totalDonation: 0,
-        transactionCount: 0,
-        createdAt: new Date().toISOString()
-      };
-      this.donors.push(donor);
+    if (!data) {
+      throw new Error('Gagal mengirim donasi');
     }
 
-    this.donations.unshift(newDonation);
-    this.persist();
-    this.logAudit('SUBMIT_DONASI', 'Donasi', `Mengirimkan donasi baru Rp ${donationData.amount.toLocaleString('id-ID')} (${trxNum})`);
-    return newDonation;
+    await this.load(true);
+    return data;
   }
 
-  public verifyDonation(id: string, status: 'berhasil' | 'ditolak') {
-    const donation = this.donations.find(d => d.id === id);
-    if (donation) {
-      donation.paymentStatus = status;
-      donation.verifiedBy = this.currentUser?.name || 'Bendahara';
-      donation.verifiedAt = new Date().toISOString();
+  public async verifyDonation(id: string, status: 'berhasil' | 'ditolak'): Promise<Donation> {
+    const data = await this.requestJson<Donation>(`/api/donations/${id}/verify`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status })
+    }, 'Gagal memverifikasi donasi');
 
-      if (status === 'berhasil') {
-        // Update donor stats
-        const donor = this.donors.find(d => d.email === donation.donorEmail);
-        if (donor) {
-          donor.totalDonation += donation.amount;
-          donor.transactionCount += 1;
-          donor.lastDonationAt = new Date().toISOString();
-        }
-        // Update program collected amount
-        const program = this.programs.find(p => p.id === donation.programId);
-        if (program) {
-          program.collectedAmount += donation.amount;
-          program.donorCount += 1;
-        }
-      }
-
-      this.persist();
-      this.logAudit('VERIFIKASI_DONASI', 'Donasi', `Memverifikasi pembayaran donasi ${donation.transactionNumber} (${status})`);
+    if (!data) {
+      throw new Error('Gagal memverifikasi donasi');
     }
+
+    await this.load(true);
+    return data;
   }
 
   // --- EXPENSES ---

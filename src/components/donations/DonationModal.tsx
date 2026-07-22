@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Program, PaymentMethod } from '../../types';
 import { db } from '../../services/dbStore';
-import { Heart, X, CheckCircle2, Copy, Building2, QrCode, ShieldCheck, Sparkles } from 'lucide-react';
+import { Heart, X, CheckCircle2, Copy, Building2, QrCode, Sparkles } from 'lucide-react';
 
 interface DonationModalProps {
   isOpen: boolean;
@@ -19,7 +19,18 @@ export const DonationModal: React.FC<DonationModalProps> = ({
   onSuccess
 }) => {
   const currentUser = db.getCurrentUser();
-  const bankAccounts = db.getBankAccounts();
+  const bankAccounts = db.getDonationBankAccounts();
+  const fallbackBank = {
+    id: 'fallback-donation-bank',
+    bankName: 'BSI',
+    accountNumber: '7123456789',
+    accountHolder: 'Yayasan YatimCare',
+    branch: undefined,
+    isActive: true,
+    isPublic: true,
+    logoUrl: undefined
+  };
+  const paymentAccounts = bankAccounts.length > 0 ? bankAccounts : [fallbackBank];
 
   const [programId, setProgramId] = useState<string>(selectedProgramId || programs[0]?.id || 'prg-1');
   const [donationType, setDonationType] = useState<'santunan' | 'pendidikan' | 'sembako' | 'zakat' | 'infak' | 'sedekah'>('santunan');
@@ -33,39 +44,67 @@ export const DonationModal: React.FC<DonationModalProps> = ({
   const [donorPhone, setDonorPhone] = useState<string>(currentUser?.phone || '');
   const [donorMessage, setDonorMessage] = useState<string>('');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('transfer_bank');
-  const [selectedBank, setSelectedBank] = useState<string>(bankAccounts[0]?.accountNumber || '7123456789');
+  const [selectedBank, setSelectedBank] = useState<string>(paymentAccounts[0]?.accountNumber || fallbackBank.accountNumber);
 
   const [submittedTx, setSubmittedTx] = useState<any>(null);
+  const [submittedBankInfo, setSubmittedBankInfo] = useState<typeof fallbackBank | null>(null);
   const [copiedAccount, setCopiedAccount] = useState<boolean>(false);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const paymentAccountSignature = paymentAccounts.map(account => account.accountNumber).join('|');
+
+  useEffect(() => {
+    if (!paymentAccounts.length) {
+      return;
+    }
+
+    const selectedStillAvailable = paymentAccounts.some(account => account.accountNumber === selectedBank);
+    if (!selectedStillAvailable) {
+      setSelectedBank(paymentAccounts[0].accountNumber);
+    }
+  }, [paymentAccountSignature, selectedBank]);
 
   if (!isOpen) return null;
 
   const activeAmount = customAmount ? parseInt(customAmount, 10) || 0 : presetAmount;
   const currentProgram = programs.find(p => p.id === programId) || programs[0];
+  const selectedBankInfo = paymentAccounts.find(account => account.accountNumber === selectedBank) || paymentAccounts[0] || fallbackBank;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (activeAmount < 10000) {
       alert('Minimal donasi adalah Rp 10.000');
       return;
     }
 
-    const newDonation = db.addDonation({
-      donorName: isAnonymous ? 'Hamba Allah' : (donorName || 'Donatur YatimCare'),
-      donorEmail: donorEmail || 'donatur@gmail.com',
-      donorPhone: donorPhone || '081234567890',
-      programId: currentProgram.id,
-      programTitle: currentProgram.title,
-      donationType: donationType as any,
-      amount: activeAmount,
-      paymentMethod,
-      destinationAccount: `BSI ${selectedBank} a.n Yayasan YatimCare`,
-      isAnonymous,
-      donorMessage
-    });
+    if (!currentProgram) {
+      alert('Program donasi belum tersedia.');
+      return;
+    }
 
-    setSubmittedTx(newDonation);
-    onSuccess();
+    try {
+      setIsSubmitting(true);
+      const newDonation = await db.submitDonation({
+        donorName: isAnonymous ? 'Hamba Allah' : (donorName || 'Donatur YatimCare'),
+        donorEmail: donorEmail || 'donatur@gmail.com',
+        donorPhone: donorPhone || '081234567890',
+        programId: currentProgram.id,
+        programTitle: currentProgram.title,
+        donationType: donationType as any,
+        amount: activeAmount,
+        paymentMethod,
+        destinationAccount: `${selectedBankInfo.bankName} ${selectedBankInfo.accountNumber} a.n ${selectedBankInfo.accountHolder}`,
+        isAnonymous,
+        donorMessage
+      });
+
+      setSubmittedTx(newDonation);
+      setSubmittedBankInfo(selectedBankInfo);
+      onSuccess();
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Gagal mengirim donasi');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const copyToClipboard = (text: string) => {
@@ -125,12 +164,18 @@ export const DonationModal: React.FC<DonationModalProps> = ({
                 <span className="text-xs text-slate-500 font-medium">Rekening Tujuan Yayasan</span>
                 <div className="mt-2 flex items-center justify-between p-3.5 bg-white rounded-2xl border border-slate-200 shadow-xs">
                   <div>
-                    <p className="font-bold text-sm text-slate-900">BSI (Bank Syariah Indonesia)</p>
-                    <p className="font-mono text-base font-bold text-emerald-700">7123456789</p>
-                    <p className="text-xs text-slate-500">a.n Yayasan Peduli YatimCare</p>
+                    <p className="font-bold text-sm text-slate-900">
+                      {submittedBankInfo?.bankName || selectedBankInfo.bankName}
+                    </p>
+                    <p className="font-mono text-base font-bold text-emerald-700">
+                      {submittedBankInfo?.accountNumber || selectedBankInfo.accountNumber}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      a.n {submittedBankInfo?.accountHolder || selectedBankInfo.accountHolder}
+                    </p>
                   </div>
                   <button
-                    onClick={() => copyToClipboard('7123456789')}
+                    onClick={() => copyToClipboard(submittedBankInfo?.accountNumber || selectedBankInfo.accountNumber)}
                     className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
                   >
                     <Copy className="w-3.5 h-3.5" />
@@ -313,6 +358,25 @@ export const DonationModal: React.FC<DonationModalProps> = ({
               </div>
             </div>
 
+            {/* Target Bank Selection */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">Pilih Nomor Rekening Tujuan</label>
+              <select
+                value={selectedBank}
+                onChange={(e) => setSelectedBank(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 text-xs font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+              >
+                {paymentAccounts.map((account) => (
+                  <option key={account.accountNumber} value={account.accountNumber}>
+                    {account.bankName} - {account.accountNumber} a.n {account.accountHolder}
+                  </option>
+                ))}
+              </select>
+              <p className="text-[10px] text-slate-500 mt-1.5 leading-relaxed">
+                Rekening ini diambil dari pengaturan admin dan menjadi tujuan transfer donasi.
+              </p>
+            </div>
+
             {/* Submit Action & Cancel */}
             <div className="pt-3 flex gap-2">
               <button
@@ -324,10 +388,11 @@ export const DonationModal: React.FC<DonationModalProps> = ({
               </button>
               <button
                 type="submit"
-                className="flex-1 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-bold text-sm shadow-sm transition-all flex items-center justify-center gap-2 active:scale-98 cursor-pointer"
+                disabled={isSubmitting}
+                className="flex-1 py-3.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white rounded-2xl font-bold text-sm shadow-sm transition-all flex items-center justify-center gap-2 active:scale-98 cursor-pointer"
               >
                 <Heart className="w-4 h-4 fill-white text-white" />
-                <span>Lanjutkan Pembayaran Rp {activeAmount.toLocaleString('id-ID')}</span>
+                <span>{isSubmitting ? 'Memproses...' : `Lanjutkan Pembayaran Rp ${activeAmount.toLocaleString('id-ID')}`}</span>
               </button>
             </div>
 

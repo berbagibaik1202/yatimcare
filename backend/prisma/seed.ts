@@ -964,6 +964,21 @@ async function main() {
         description: 'Logo aplikasi utama'
       },
       {
+        key: 'donation_bank_name',
+        value: JSON.stringify('BSI'),
+        description: 'Nama bank tujuan utama donasi'
+      },
+      {
+        key: 'donation_bank_number',
+        value: JSON.stringify('7123456789'),
+        description: 'Nomor rekening tujuan utama donasi'
+      },
+      {
+        key: 'donation_bank_holder',
+        value: JSON.stringify('Yayasan Peduli YatimCare'),
+        description: 'Nama pemilik rekening tujuan donasi'
+      },
+      {
         key: 'foundation_name',
         value: JSON.stringify('Yayasan Peduli YatimCare'),
         description: 'Nama resmi yayasan'
