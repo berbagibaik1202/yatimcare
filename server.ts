@@ -1,4 +1,5 @@
 import express from 'express';
+import fs from 'node:fs';
 import net from 'net';
 import path from 'path';
 import { createServer as createViteServer } from 'vite';
@@ -28,6 +29,36 @@ async function resolvePort(preferredPort: number): Promise<number> {
   return preferredPort;
 }
 
+function resolveFrontendEntry(): { root: string; index: string } | null {
+  const candidates = [
+    process.env.FRONTEND_INDEX,
+    process.env.FRONTEND_ROOT,
+    path.join(process.cwd(), 'dist'),
+    process.cwd(),
+  ].filter(Boolean) as string[];
+
+  for (const candidate of candidates) {
+    const resolvedCandidate = path.resolve(candidate);
+
+    if (fs.existsSync(resolvedCandidate) && fs.statSync(resolvedCandidate).isFile()) {
+      return {
+        root: path.dirname(resolvedCandidate),
+        index: resolvedCandidate,
+      };
+    }
+
+    const indexFile = path.join(resolvedCandidate, 'index.html');
+    if (fs.existsSync(indexFile)) {
+      return {
+        root: resolvedCandidate,
+        index: indexFile,
+      };
+    }
+  }
+
+  return null;
+}
+
 async function startServer() {
   const app = express();
   const preferredPort = Number(process.env.PORT ?? 3000);
@@ -45,11 +76,19 @@ async function startServer() {
     });
     app.use(vite.middlewares);
   } else {
-    const distPath = path.join(process.cwd(), 'dist');
-    app.use(express.static(distPath));
-    app.get('*', (req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
-    });
+    const frontend = resolveFrontendEntry();
+
+    if (frontend) {
+      app.use(express.static(frontend.root));
+      app.get('*', (req, res, next) => {
+        if (req.path.startsWith('/api')) {
+          next();
+          return;
+        }
+
+        res.sendFile(frontend.index);
+      });
+    }
   }
 
   app.listen(port, host, () => {

@@ -9,13 +9,64 @@ import { notFound } from './middleware/notFound.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { env } from './config/env.js';
 
+function getCorsOriginConfig() {
+  const configuredOrigins = env.CORS_ORIGIN
+    ?.split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+  if (!configuredOrigins || configuredOrigins.length === 0) {
+    return true;
+  }
+
+  if (configuredOrigins.includes('*')) {
+    return true;
+  }
+
+  if (env.NODE_ENV === 'production' && configuredOrigins.some((origin) => /localhost|127\.0\.0\.1/.test(origin))) {
+    return true;
+  }
+
+  return configuredOrigins;
+}
+
+function resolveFrontendEntry(): { root: string; index: string } | null {
+  const candidates = [
+    process.env.FRONTEND_INDEX,
+    process.env.FRONTEND_ROOT,
+    path.join(process.cwd(), 'dist'),
+    process.cwd(),
+  ].filter(Boolean) as string[];
+
+  for (const candidate of candidates) {
+    const resolvedCandidate = path.resolve(candidate);
+
+    if (fs.existsSync(resolvedCandidate) && fs.statSync(resolvedCandidate).isFile()) {
+      return {
+        root: path.dirname(resolvedCandidate),
+        index: resolvedCandidate
+      };
+    }
+
+    const indexFile = path.join(resolvedCandidate, 'index.html');
+    if (fs.existsSync(indexFile)) {
+      return {
+        root: resolvedCandidate,
+        index: indexFile
+      };
+    }
+  }
+
+  return null;
+}
+
 export function createApp() {
   const app = express();
 
   app.use(helmet());
   app.use(
     cors({
-      origin: env.CORS_ORIGIN ?? true,
+      origin: getCorsOriginConfig(),
       credentials: true
     })
   );
@@ -33,18 +84,17 @@ export function createApp() {
   app.use('/api', apiRoutes);
 
   if (env.NODE_ENV === 'production') {
-    const frontendRoot = path.resolve(process.env.FRONTEND_ROOT ?? path.join(process.cwd(), '..'));
-    const frontendIndex = path.join(frontendRoot, 'index.html');
+    const frontend = resolveFrontendEntry();
 
-    if (fs.existsSync(frontendIndex)) {
-      app.use(express.static(frontendRoot));
+    if (frontend) {
+      app.use(express.static(frontend.root));
       app.get('*', (req, res, next) => {
         if (req.path.startsWith('/api')) {
           next();
           return;
         }
 
-        res.sendFile(frontendIndex);
+        res.sendFile(frontend.index);
       });
     }
   }
