@@ -959,6 +959,11 @@ async function main() {
         description: 'Nama aplikasi utama'
       },
       {
+        key: 'app_logo_url',
+        value: JSON.stringify(''),
+        description: 'Logo aplikasi utama'
+      },
+      {
         key: 'foundation_name',
         value: JSON.stringify('Yayasan Peduli YatimCare'),
         description: 'Nama resmi yayasan'

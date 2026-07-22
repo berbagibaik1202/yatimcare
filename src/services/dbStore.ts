@@ -194,6 +194,15 @@ class DatabaseStore {
     return 'YatimCare';
   }
 
+  public getAppLogoUrl(): string | undefined {
+    const appLogoUrl = this.getSystemSettingValue('app_logo_url');
+    if (typeof appLogoUrl === 'string' && appLogoUrl.trim()) {
+      return appLogoUrl;
+    }
+
+    return undefined;
+  }
+
   public async updateSystemSetting(
     key: string,
     value: SystemSetting['value'],

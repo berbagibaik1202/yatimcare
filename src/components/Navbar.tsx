@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Heart,
   Users,
@@ -34,6 +34,8 @@ export const Navbar: React.FC<NavbarProps> = ({
 }) => {
   const currentUser = db.getCurrentUser();
   const appName = db.getAppName();
+  const appLogoUrl = db.getAppLogoUrl();
+  const [logoLoadFailed, setLogoLoadFailed] = useState(false);
 
   const roleLabels: Record<UserRole, { label: string; bg: string; color: string }> = {
     super_admin: { label: 'Super Admin', bg: 'bg-purple-100', color: 'text-purple-800' },
@@ -64,8 +66,19 @@ export const Navbar: React.FC<NavbarProps> = ({
             onClick={() => setActiveTab('landing')}
             className="flex items-center gap-3 group text-left focus:outline-hidden cursor-pointer"
           >
-            <div className="w-10 h-10 rounded-2xl bg-emerald-600 flex items-center justify-center text-white shadow-sm group-hover:scale-105 transition-transform">
-              <Heart className="w-5 h-5 fill-white text-white" />
+            <div className="w-10 h-10 rounded-2xl bg-white border border-emerald-100 flex items-center justify-center text-white shadow-sm overflow-hidden group-hover:scale-105 transition-transform">
+              {appLogoUrl && !logoLoadFailed ? (
+                <img
+                  src={appLogoUrl}
+                  alt={`${appName} logo`}
+                  className="w-full h-full object-contain p-1.5"
+                  onError={() => setLogoLoadFailed(true)}
+                />
+              ) : (
+                <div className="w-full h-full bg-emerald-600 flex items-center justify-center">
+                  <Heart className="w-5 h-5 fill-white text-white" />
+                </div>
+              )}
             </div>
             <div>
               <div className="flex items-center gap-1.5">
