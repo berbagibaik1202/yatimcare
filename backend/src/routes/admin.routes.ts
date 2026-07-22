@@ -5,6 +5,7 @@ import donorsRoutes from '../modules/donors/donors.routes.js';
 import donationsRoutes from '../modules/donations/donations.routes.js';
 import reportsRoutes from '../modules/reports/reports.routes.js';
 import settingsRoutes from '../modules/settings/settings.routes.js';
+import usersRoutes from '../modules/users/users.routes.js';
 
 const router = Router();
 
@@ -14,5 +15,6 @@ router.use('/donors', donorsRoutes);
 router.use('/donations', donationsRoutes);
 router.use('/reports', reportsRoutes);
 router.use('/settings', settingsRoutes);
+router.use('/users', usersRoutes);
 
 export default router;

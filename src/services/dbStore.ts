@@ -1,5 +1,6 @@
 import {
   User,
+  UserRole,
   Guardian,
   Child,
   Donor,
@@ -175,6 +176,61 @@ class DatabaseStore {
 
   public getUsers(): User[] {
     return this.users;
+  }
+
+  public async createUserRecord(userData: {
+    name: string;
+    email: string;
+    phone: string;
+    role: UserRole;
+    password: string;
+    status?: User['status'];
+    avatar?: string;
+  }): Promise<User> {
+    const data = await this.requestJson<User>('/api/users', {
+      method: 'POST',
+      body: JSON.stringify(userData)
+    }, 'Gagal menambahkan user aplikasi');
+
+    if (!data) {
+      throw new Error('Gagal menambahkan user aplikasi');
+    }
+
+    await this.load(true);
+    return data;
+  }
+
+  public async updateUserRecord(
+    id: string,
+    updates: Partial<{
+      name: string;
+      email: string;
+      phone: string;
+      role: UserRole;
+      password: string;
+      status: User['status'];
+      avatar?: string;
+    }>
+  ): Promise<User> {
+    const data = await this.requestJson<User>(`/api/users/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(updates)
+    }, 'Gagal memperbarui user aplikasi');
+
+    if (!data) {
+      throw new Error('Gagal memperbarui user aplikasi');
+    }
+
+    await this.load(true);
+    return data;
+  }
+
+  public async deleteUserRecord(id: string): Promise<void> {
+    await this.requestJson<void>(`/api/users/${id}`, {
+      method: 'DELETE'
+    }, 'Gagal menghapus user aplikasi');
+
+    await this.load(true);
   }
 
   public getSystemSettings(): SystemSetting[] {

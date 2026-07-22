@@ -24,7 +24,7 @@ router.get(
     });
 
     res.json({
-      data: settings.map((setting) => ({
+      data: settings.map((setting: { key: string; value: unknown; description: string | null; updatedAt: Date }) => ({
         key: setting.key,
         value: setting.value,
         description: setting.description ?? undefined,
