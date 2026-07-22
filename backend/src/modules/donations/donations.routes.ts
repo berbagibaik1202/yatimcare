@@ -3,6 +3,7 @@ import { Prisma } from '../../generated/prisma.js';
 import { z } from 'zod';
 import { prisma } from '../../lib/prisma.js';
 import { asyncHandler } from '../../lib/asyncHandler.js';
+import { requireCurrentUserRole } from '../../lib/authorization.js';
 
 const router = Router();
 
@@ -26,6 +27,11 @@ const donationCreateSchema = z.object({
 router.get(
   '/',
   asyncHandler(async (_req, res) => {
+    const currentUser = await requireCurrentUserRole(_req, res, ['super_admin', 'admin', 'bendahara']);
+    if (!currentUser) {
+      return;
+    }
+
     const donations = await prisma.donation.findMany({
       orderBy: { donatedAt: 'desc' },
       include: {
@@ -42,6 +48,11 @@ router.get(
 router.post(
   '/',
   asyncHandler(async (req, res) => {
+    const currentUser = await requireCurrentUserRole(req, res, ['super_admin', 'admin', 'bendahara']);
+    if (!currentUser) {
+      return;
+    }
+
     const input = donationCreateSchema.parse(req.body);
     const year = new Date().getFullYear();
     const count = await prisma.donation.count();

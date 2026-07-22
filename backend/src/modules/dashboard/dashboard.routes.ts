@@ -2,12 +2,20 @@ import { Router } from 'express';
 import { prisma } from '../../lib/prisma.js';
 import { toNumber } from '../../lib/format.js';
 import { asyncHandler } from '../../lib/asyncHandler.js';
+import { requireCurrentUserRole } from '../../lib/authorization.js';
 
 const router = Router();
 
 router.get(
   '/',
   asyncHandler(async (_req, res) => {
+    const currentUser = await requireCurrentUserRole(_req, res, ['super_admin', 'admin', 'bendahara']);
+    if (!currentUser) {
+      return;
+    }
+
+    const hideChildData = currentUser.role === 'bendahara';
+
     const [
       totalChildren,
       totalYatim,
@@ -19,10 +27,10 @@ router.get(
       aidSummary,
       recentLogs
     ] = await Promise.all([
-      prisma.child.count(),
-      prisma.child.count({ where: { orphanCategory: 'yatim' } }),
-      prisma.child.count({ where: { orphanCategory: 'piatu' } }),
-      prisma.child.count({ where: { orphanCategory: 'yatim_piatu' } }),
+      hideChildData ? Promise.resolve(0) : prisma.child.count(),
+      hideChildData ? Promise.resolve(0) : prisma.child.count({ where: { orphanCategory: 'yatim' } }),
+      hideChildData ? Promise.resolve(0) : prisma.child.count({ where: { orphanCategory: 'piatu' } }),
+      hideChildData ? Promise.resolve(0) : prisma.child.count({ where: { orphanCategory: 'yatim_piatu' } }),
       prisma.donor.count(),
       prisma.donation.aggregate({
         where: { paymentStatus: 'berhasil' },
@@ -36,10 +44,12 @@ router.get(
         where: { status: 'selesai' },
         _sum: { amount: true }
       }),
-      prisma.auditLog.findMany({
-        take: 8,
-        orderBy: { createdAt: 'desc' }
-      })
+      hideChildData
+        ? Promise.resolve([])
+        : prisma.auditLog.findMany({
+            take: 8,
+            orderBy: { createdAt: 'desc' }
+          })
     ]);
 
     const donationReceived = toNumber(donationSummary._sum.amount);
@@ -63,4 +73,3 @@ router.get(
 );
 
 export default router;
-

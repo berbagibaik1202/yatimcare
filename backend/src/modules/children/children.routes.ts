@@ -3,7 +3,7 @@ import { Prisma, VerificationStatus } from '../../generated/prisma.js';
 import { z } from 'zod';
 import { prisma } from '../../lib/prisma.js';
 import { asyncHandler } from '../../lib/asyncHandler.js';
-import { getCurrentUserFromRequest } from '../../lib/auth.js';
+import { requireCurrentUserRole } from '../../lib/authorization.js';
 
 const router = Router();
 
@@ -59,6 +59,11 @@ const childCreateSchema = z.object({
 router.get(
   '/',
   asyncHandler(async (_req, res) => {
+    const currentUser = await requireCurrentUserRole(_req, res, ['super_admin', 'admin', 'petugas']);
+    if (!currentUser) {
+      return;
+    }
+
     const children = await prisma.child.findMany({
       orderBy: { registeredAt: 'desc' },
       include: {
@@ -75,6 +80,11 @@ router.get(
 router.post(
   '/',
   asyncHandler(async (req, res) => {
+    const currentUser = await requireCurrentUserRole(req, res, ['super_admin', 'admin', 'petugas']);
+    if (!currentUser) {
+      return;
+    }
+
     const input = childCreateSchema.parse(req.body);
     const year = new Date().getFullYear();
     const count = await prisma.child.count();
@@ -127,8 +137,12 @@ router.post(
 router.put(
   '/:id',
   asyncHandler(async (req, res) => {
+    const currentUser = await requireCurrentUserRole(req, res, ['super_admin', 'admin', 'petugas']);
+    if (!currentUser) {
+      return;
+    }
+
     const input = childCreateSchema.partial().parse(req.body);
-    const currentUser = await getCurrentUserFromRequest(req);
     const shouldMarkVerified = input.status !== undefined;
     const updated = await prisma.child.update({
       where: { id: req.params.id },
@@ -149,6 +163,11 @@ router.put(
 router.delete(
   '/:id',
   asyncHandler(async (req, res) => {
+    const currentUser = await requireCurrentUserRole(req, res, ['super_admin', 'admin', 'petugas']);
+    if (!currentUser) {
+      return;
+    }
+
     await prisma.child.delete({
       where: { id: req.params.id }
     });

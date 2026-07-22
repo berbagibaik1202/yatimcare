@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../../lib/prisma.js';
 import { asyncHandler } from '../../lib/asyncHandler.js';
+import { requireCurrentUserRole } from '../../lib/authorization.js';
 
 const router = Router();
 
@@ -19,6 +20,11 @@ const donorCreateSchema = z.object({
 router.get(
   '/',
   asyncHandler(async (_req, res) => {
+    const currentUser = await requireCurrentUserRole(_req, res, ['super_admin', 'admin', 'bendahara']);
+    if (!currentUser) {
+      return;
+    }
+
     const donors = await prisma.donor.findMany({
       orderBy: { createdAt: 'desc' },
       include: { donations: { take: 5, orderBy: { donatedAt: 'desc' } } }
@@ -31,6 +37,11 @@ router.get(
 router.post(
   '/',
   asyncHandler(async (req, res) => {
+    const currentUser = await requireCurrentUserRole(req, res, ['super_admin', 'admin', 'bendahara']);
+    if (!currentUser) {
+      return;
+    }
+
     const input = donorCreateSchema.parse(req.body);
     const year = new Date().getFullYear();
     const count = await prisma.donor.count();
@@ -57,6 +68,11 @@ router.post(
 router.put(
   '/:id',
   asyncHandler(async (req, res) => {
+    const currentUser = await requireCurrentUserRole(req, res, ['super_admin', 'admin', 'bendahara']);
+    if (!currentUser) {
+      return;
+    }
+
     const input = donorCreateSchema.partial().parse(req.body);
 
     const updated = await prisma.donor.update({
@@ -80,6 +96,11 @@ router.put(
 router.delete(
   '/:id',
   asyncHandler(async (req, res) => {
+    const currentUser = await requireCurrentUserRole(req, res, ['super_admin', 'admin', 'bendahara']);
+    if (!currentUser) {
+      return;
+    }
+
     await prisma.donor.delete({
       where: { id: req.params.id }
     });

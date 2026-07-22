@@ -105,9 +105,15 @@ router.get(
       prisma.galleryItem.findMany({ orderBy: { createdAt: 'desc' } })
     ]);
 
+    const hideSensitiveData = currentUser?.role === 'bendahara';
+    const visibleGuardians = hideSensitiveData ? [] : guardians;
+    const visibleChildren = hideSensitiveData ? [] : children;
+    const visibleSurveys = hideSensitiveData ? [] : surveys;
+    const visibleAuditLogs = hideSensitiveData ? [] : auditLogs;
+
     const successfulDonations = donations.filter((donation: any) => donation.paymentStatus === 'berhasil');
     const approvedExpenses = expenses.filter((expense: any) => expense.status === 'dibayarkan' || expense.status === 'disetujui');
-    const activeChildren = children.filter((child: any) => child.status === 'aktif');
+    const activeChildren = visibleChildren.filter((child: any) => child.status === 'aktif');
 
     res.json({
       data: {
@@ -121,7 +127,7 @@ router.get(
           status: user.status,
           createdAt: user.createdAt.toISOString()
         })),
-        guardians: guardians.map((guardian: any) => ({
+        guardians: visibleGuardians.map((guardian: any) => ({
           id: guardian.id,
           userId: guardian.userId ?? '',
           fullName: guardian.fullName,
@@ -139,7 +145,7 @@ router.get(
           postalCode: guardian.postalCode,
           createdAt: guardian.createdAt.toISOString()
         })),
-        children: children.map((child: any) => ({
+        children: visibleChildren.map((child: any) => ({
           id: child.id,
           registrationNumber: child.registrationNumber,
           guardianId: child.guardianId,
@@ -290,7 +296,7 @@ router.get(
           status: aid.status,
           notes: aid.notes ?? undefined
         })),
-        surveys: surveys.map((survey: any) => ({
+        surveys: visibleSurveys.map((survey: any) => ({
           id: survey.id,
           childId: survey.childId,
           childName: survey.childName,
@@ -318,7 +324,7 @@ router.get(
           isPublic: true,
           logoUrl: undefined
         })),
-        auditLogs: auditLogs.map((entry: any) => mapAuditLog(entry)),
+        auditLogs: visibleAuditLogs.map((entry: any) => mapAuditLog(entry)),
         news: news.map((item: any) => mapNewsItem(item)),
         gallery: gallery.map((item: any) => mapGalleryItem(item)),
         financialSummary: {
@@ -328,15 +334,15 @@ router.get(
             successfulDonations.reduce((sum: number, donation: any) => sum + toNumber(donation.amount), 0) -
             approvedExpenses.reduce((sum: number, expense: any) => sum + toNumber(expense.amount), 0),
           totalActiveChildren: activeChildren.length,
-          totalOrphanYatim: activeChildren.filter((child: any) => child.orphanCategory === 'yatim').length,
-          totalOrphanPiatu: activeChildren.filter((child: any) => child.orphanCategory === 'piatu').length,
-          totalOrphanYatimPiatu: activeChildren.filter((child: any) => child.orphanCategory === 'yatim_piatu').length,
+          totalOrphanYatim: visibleChildren.filter((child: any) => child.orphanCategory === 'yatim').length,
+          totalOrphanPiatu: visibleChildren.filter((child: any) => child.orphanCategory === 'piatu').length,
+          totalOrphanYatimPiatu: visibleChildren.filter((child: any) => child.orphanCategory === 'yatim_piatu').length,
           totalActiveDonors: donors.length,
           totalDistributedAid: aidDistributions
             .filter((aid: any) => aid.status === 'selesai')
             .reduce((sum: number, aid: any) => sum + toNumber(aid.amount), 0),
           pendingVerificationsCount:
-            children.filter((child: any) => child.status === 'menunggu_verifikasi' || child.status === 'diajukan').length +
+            visibleChildren.filter((child: any) => child.status === 'menunggu_verifikasi' || child.status === 'diajukan').length +
             donations.filter((donation: any) => donation.paymentStatus === 'menunggu_verifikasi').length
         },
         currentUser

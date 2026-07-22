@@ -2,12 +2,18 @@ import { Router } from 'express';
 import { prisma } from '../../lib/prisma.js';
 import { toNumber } from '../../lib/format.js';
 import { asyncHandler } from '../../lib/asyncHandler.js';
+import { requireCurrentUserRole } from '../../lib/authorization.js';
 
 const router = Router();
 
 router.get(
   '/finance',
   asyncHandler(async (_req, res) => {
+    const currentUser = await requireCurrentUserRole(_req, res, ['super_admin', 'admin', 'bendahara']);
+    if (!currentUser) {
+      return;
+    }
+
     const [income, expense, donationsByStatus, expensesByStatus] = await Promise.all([
       prisma.donation.aggregate({
         where: { paymentStatus: 'berhasil' },
@@ -40,4 +46,3 @@ router.get(
 );
 
 export default router;
-
