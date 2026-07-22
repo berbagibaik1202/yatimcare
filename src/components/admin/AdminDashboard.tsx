@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { db } from '../../services/dbStore';
 import { ChildrenManager } from './ChildrenManager';
+import { GuardiansManager } from './GuardiansManager';
 import { SurveyManager } from './SurveyManager';
 import { AidDistributionManager } from './AidDistributionManager';
 import { DonationsManager } from '../donations/DonationsManager';
@@ -19,6 +20,7 @@ import {
   PieChart,
   RotateCcw,
   UserCheck,
+  UsersRound,
   Settings2,
   Shield
 } from 'lucide-react';
@@ -27,7 +29,7 @@ interface AdminDashboardProps {
   onRefreshData: () => void;
 }
 
-type AdminTabId = 'overview' | 'children' | 'donors' | 'survey' | 'aid' | 'donations' | 'finance' | 'audit' | 'users' | 'settings';
+type AdminTabId = 'overview' | 'children' | 'guardians' | 'donors' | 'survey' | 'aid' | 'donations' | 'finance' | 'audit' | 'users' | 'settings';
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onRefreshData }) => {
   const [activeAdminSubTab, setActiveAdminSubTab] = useState<AdminTabId>('overview');
@@ -49,6 +51,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onRefreshData })
         : [
             { id: 'overview', label: 'Ringkasan Utama', icon: PieChart },
             { id: 'children', label: 'Data Anak & Verifikasi', icon: Users },
+            { id: 'guardians', label: 'Data Wali', icon: UsersRound },
             { id: 'donors', label: 'Data Donatur', icon: UserCheck },
             { id: 'survey', label: 'Survei Lapangan', icon: MapPin },
             { id: 'aid', label: 'Penyaluran Bantuan', icon: Heart },
@@ -167,7 +170,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onRefreshData })
             <h3 className="font-serif font-bold text-lg text-slate-900">
               {isTreasurer ? 'Pintasan Keuangan Bendahara' : 'Pintasan Pengelolaan Pengurus'}
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-bold">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs font-bold">
               {!isTreasurer && (
                 <button
                   onClick={() => setActiveAdminSubTab('children')}
@@ -176,6 +179,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onRefreshData })
                   <Users className="w-5 h-5 text-emerald-600 mb-2" />
                   <p className="font-bold text-sm text-slate-900 group-hover:text-emerald-800">Verifikasi Data Anak &gt;</p>
                   <p className="font-normal text-slate-500 text-[11px] mt-0.5">Periksa pendaftaran anak baru dan dokumen kependudukan.</p>
+                </button>
+              )}
+
+              {!isTreasurer && (
+                <button
+                  onClick={() => setActiveAdminSubTab('guardians')}
+                  className="p-5 rounded-2xl bg-slate-50 hover:bg-emerald-50 hover:border-emerald-200 border border-slate-200 text-left transition-all cursor-pointer group"
+                >
+                  <UsersRound className="w-5 h-5 text-emerald-600 mb-2" />
+                  <p className="font-bold text-sm text-slate-900 group-hover:text-emerald-800">Data Wali &gt;</p>
+                  <p className="font-normal text-slate-500 text-[11px] mt-0.5">Lihat daftar wali dan anak binaan yang terhubung.</p>
                 </button>
               )}
 
@@ -226,7 +240,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onRefreshData })
                     className="p-5 rounded-2xl bg-slate-50 hover:bg-emerald-50 hover:border-emerald-200 border border-slate-200 text-left transition-all cursor-pointer group"
                   >
                     <Shield className="w-5 h-5 text-emerald-600 mb-2" />
-                    <p className="font-bold text-sm text-slate-900 group-hover:text-emerald-800">User Aplikasi →</p>
+                    <p className="font-bold text-sm text-slate-900 group-hover:text-emerald-800">User Aplikasi -&gt;</p>
                     <p className="font-normal text-slate-500 text-[11px] mt-0.5">Lihat daftar akun admin dan staf aplikasi.</p>
                   </button>
 
@@ -235,7 +249,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onRefreshData })
                     className="p-5 rounded-2xl bg-slate-50 hover:bg-emerald-50 hover:border-emerald-200 border border-slate-200 text-left transition-all cursor-pointer group"
                   >
                     <Settings2 className="w-5 h-5 text-emerald-600 mb-2" />
-                    <p className="font-bold text-sm text-slate-900 group-hover:text-emerald-800">Nama Aplikasi →</p>
+                    <p className="font-bold text-sm text-slate-900 group-hover:text-emerald-800">Nama Aplikasi -&gt;</p>
                     <p className="font-normal text-slate-500 text-[11px] mt-0.5">Atur nama yang tampil di seluruh aplikasi.</p>
                   </button>
                 </>
@@ -246,6 +260,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onRefreshData })
       )}
 
       {activeAdminSubTab === 'children' && !isTreasurer && <ChildrenManager onRefreshData={onRefreshData} />}
+      {activeAdminSubTab === 'guardians' && !isTreasurer && <GuardiansManager onRefreshData={onRefreshData} />}
       {activeAdminSubTab === 'donors' && <DonorsListManager onRefreshData={onRefreshData} />}
       {activeAdminSubTab === 'survey' && !isTreasurer && <SurveyManager onRefreshData={onRefreshData} />}
       {activeAdminSubTab === 'aid' && <AidDistributionManager onRefreshData={onRefreshData} />}
