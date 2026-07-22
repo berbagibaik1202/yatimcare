@@ -1,0 +1,540 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  super_admin
+  admin
+  bendahara
+  petugas
+  donatur
+  wali
+  public
+}
+
+enum AccountStatus {
+  active
+  suspended
+}
+
+enum OrphanCategory {
+  yatim
+  piatu
+  yatim_piatu
+}
+
+enum VerificationStatus {
+  draft
+  diajukan
+  menunggu_verifikasi
+  perlu_perbaikan
+  terverifikasi
+  ditolak
+  aktif
+  tidak_aktif
+  lulus
+}
+
+enum DonorType {
+  individu
+  perusahaan
+  organisasi
+  komunitas
+  anonim
+}
+
+enum DonorVerificationStatus {
+  verified
+  unverified
+}
+
+enum PaymentMethod {
+  transfer_bank
+  qris
+  e_wallet
+  tunai
+}
+
+enum DonationStatus {
+  menunggu_pembayaran
+  menunggu_verifikasi
+  berhasil
+  ditolak
+  dibatalkan
+}
+
+enum ExpenseStatus {
+  diajukan
+  disetujui
+  ditolak
+  dibayarkan
+}
+
+enum AidStatus {
+  dijadwalkan
+  terproses
+  selesai
+  dibatalkan
+}
+
+enum SurveyEligibility {
+  layak
+  layak_catatan
+  perlu_survei_ulang
+  tidak_layak
+}
+
+enum ChildDocumentType {
+  kk
+  ktp_wali
+  akta_lahir
+  surat_kematian_ayah
+  surat_kematian_ibu
+  sktm
+  surat_sekolah
+}
+
+enum PhotoType {
+  anak
+  rumah
+  kegiatan
+}
+
+enum ProgramCategory {
+  pendidikan
+  kesehatan
+  santunan
+  sembako
+  pembangunan
+  darurat
+}
+
+enum ProgramStatus {
+  aktif
+  selesai
+  draft
+  dihentikan
+}
+
+enum DonationType {
+  umum
+  pendidikan
+  santunan
+  zakat
+  infak
+  sedekah
+  program_khusus
+}
+
+enum ExpenseCategory {
+  bantuan_pendidikan
+  santunan_bulanan
+  sembako_makanan
+  kesehatan
+  perbaikan_rumah
+  operasional_yayasan
+  administrasi_transport
+}
+
+enum NotificationChannel {
+  in_app
+  email
+  whatsapp
+}
+
+model User {
+  id           String        @id @default(cuid()) @db.VarChar(25)
+  name         String        @db.VarChar(150)
+  email        String        @unique @db.VarChar(191)
+  phone        String        @unique @db.VarChar(30)
+  role         UserRole
+  avatar       String?       @db.VarChar(255)
+  passwordHash String?       @db.VarChar(255)
+  status       AccountStatus @default(active)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  guardianProfile Guardian?
+  donorProfile    Donor?
+  verifiedChildren Child[]    @relation("ChildVerifiedBy")
+  verifiedDonations Donation[] @relation("DonationVerifiedBy")
+  submittedExpenses Expense[]  @relation("ExpenseSubmittedBy")
+  approvedExpenses  Expense[]  @relation("ExpenseApprovedBy")
+  officerSurveys    Survey[]   @relation("SurveyOfficer")
+  officerAid        AidDistribution[] @relation("AidOfficer")
+  auditLogs         AuditLog[] @relation("AuditActor")
+  notifications     Notification[]
+  createdNews       NewsItem[] @relation("NewsCreatedBy")
+}
+
+model Guardian {
+  id              String   @id @default(cuid()) @db.VarChar(25)
+  userId          String?  @unique @db.VarChar(25)
+  fullName        String   @db.VarChar(150)
+  nik             String   @unique @db.VarChar(30)
+  relationship    String   @db.VarChar(100)
+  occupation      String   @db.VarChar(120)
+  monthlyIncome   Int
+  phone           String   @db.VarChar(30)
+  email           String   @db.VarChar(191)
+  address         String   @db.Text
+  province        String   @db.VarChar(100)
+  city            String   @db.VarChar(100)
+  district        String   @db.VarChar(100)
+  village         String   @db.VarChar(100)
+  postalCode      String   @db.VarChar(10)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user            User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  children        Child[]
+
+  @@index([city])
+  @@index([province])
+}
+
+model Child {
+  id                  String            @id @default(cuid()) @db.VarChar(25)
+  registrationNumber  String            @unique @db.VarChar(40)
+  guardianId          String            @db.VarChar(25)
+  guardianName        String            @db.VarChar(150)
+  guardianPhone       String?           @db.VarChar(30)
+  fullName            String            @db.VarChar(150)
+  nickname            String?           @db.VarChar(100)
+  birthPlace          String            @db.VarChar(100)
+  birthDate           DateTime          @db.Date
+  gender              String            @db.Char(1)
+  orphanCategory      OrphanCategory
+  nik                 String            @unique @db.VarChar(30)
+  familyCardNumber    String            @unique @db.VarChar(30)
+  birthCertificateNumber String?        @unique @db.VarChar(40)
+  address             String            @db.Text
+  rt                  String            @db.VarChar(5)
+  rw                  String            @db.VarChar(5)
+  province            String            @db.VarChar(100)
+  city                String            @db.VarChar(100)
+  district            String            @db.VarChar(100)
+  village             String            @db.VarChar(100)
+  postalCode          String            @db.VarChar(10)
+  latitude            Decimal           @db.Decimal(10, 7)
+  longitude           Decimal           @db.Decimal(10, 7)
+  schoolName          String            @db.VarChar(150)
+  educationLevel      String            @db.VarChar(50)
+  schoolGrade         String?           @db.VarChar(50)
+  studentNumber       String?           @unique @db.VarChar(50)
+  healthCondition     String            @db.Text
+  specialNeeds        String?           @db.Text
+  familyMembers       Int
+  homeOwnershipStatus String            @db.VarChar(50)
+  status              VerificationStatus @default(diajukan)
+  verificationNotes   String?           @db.Text
+  registeredAt        DateTime          @default(now())
+  verifiedAt          DateTime?
+  verifiedById        String?           @db.VarChar(25)
+  photoUrl            String?           @db.VarChar(255)
+  homePhotoUrl        String?           @db.VarChar(255)
+  totalAidReceived    Decimal           @default(0) @db.Decimal(18, 2)
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  guardian            Guardian          @relation(fields: [guardianId], references: [id], onDelete: Restrict)
+  verifiedBy          User?             @relation("ChildVerifiedBy", fields: [verifiedById], references: [id], onDelete: SetNull)
+  documents           ChildDocument[]
+  photos              ChildPhoto[]
+  surveys             Survey[]
+  aidDistributions    AidDistribution[]
+
+  @@index([guardianId])
+  @@index([status])
+  @@index([province, city])
+}
+
+model ChildDocument {
+  id                 String            @id @default(cuid()) @db.VarChar(25)
+  childId            String            @db.VarChar(25)
+  documentType       ChildDocumentType
+  title              String            @db.VarChar(150)
+  filePath           String            @db.VarChar(255)
+  verificationStatus VerificationStatus @default(menunggu_verifikasi)
+  notes              String?           @db.Text
+  uploadedAt         DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  child              Child             @relation(fields: [childId], references: [id], onDelete: Cascade)
+
+  @@index([childId])
+}
+
+model ChildPhoto {
+  id         String    @id @default(cuid()) @db.VarChar(25)
+  childId    String    @db.VarChar(25)
+  photoType  PhotoType
+  filePath   String    @db.VarChar(255)
+  caption    String?   @db.VarChar(255)
+  isPublic   Boolean   @default(false)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  child      Child     @relation(fields: [childId], references: [id], onDelete: Cascade)
+
+  @@index([childId])
+}
+
+model Survey {
+  id                String            @id @default(cuid()) @db.VarChar(25)
+  childId           String            @db.VarChar(25)
+  childName         String            @db.VarChar(150)
+  officerId         String            @db.VarChar(25)
+  officerName       String            @db.VarChar(150)
+  surveyDate        DateTime
+  economicCondition String            @db.Text
+  homeCondition     String            @db.Text
+  educationCondition String           @db.Text
+  healthCondition   String            @db.Text
+  documentMatch     Boolean
+  latitude          Decimal           @db.Decimal(10, 7)
+  longitude         Decimal           @db.Decimal(10, 7)
+  recommendation    SurveyEligibility
+  notes             String            @db.Text
+  photos            Json?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  child             Child             @relation(fields: [childId], references: [id], onDelete: Cascade)
+  officer           User              @relation("SurveyOfficer", fields: [officerId], references: [id], onDelete: Restrict)
+
+  @@index([childId])
+  @@index([officerId])
+}
+
+model Donor {
+  id                String                  @id @default(cuid()) @db.VarChar(25)
+  userId            String?                 @unique @db.VarChar(25)
+  donorNumber       String                  @unique @db.VarChar(40)
+  fullName          String                  @db.VarChar(150)
+  donorType         DonorType
+  institutionName   String?                 @db.VarChar(150)
+  email             String                  @unique @db.VarChar(191)
+  phone             String                  @db.VarChar(30)
+  address           String?                 @db.Text
+  isAnonymousDefault Boolean                @default(false)
+  isRecurringDonor  Boolean                @default(false)
+  verificationStatus DonorVerificationStatus @default(unverified)
+  totalDonation     Decimal                 @default(0) @db.Decimal(18, 2)
+  transactionCount  Int                     @default(0)
+  lastDonationAt    DateTime?
+  avatarUrl         String?                 @db.VarChar(255)
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+
+  user              User?                   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  donations         Donation[]
+
+  @@index([fullName])
+  @@index([donorType])
+}
+
+model Program {
+  id                String         @id @default(cuid()) @db.VarChar(25)
+  programCode       String         @unique @db.VarChar(40)
+  title             String         @db.VarChar(150)
+  slug              String         @unique @db.VarChar(180)
+  category          ProgramCategory
+  description       String         @db.Text
+  targetAmount      Decimal        @db.Decimal(18, 2)
+  collectedAmount   Decimal        @default(0) @db.Decimal(18, 2)
+  distributedAmount Decimal        @default(0) @db.Decimal(18, 2)
+  startDate         DateTime
+  endDate           DateTime
+  thumbnail         String         @db.VarChar(255)
+  status            ProgramStatus  @default(draft)
+  isFeatured        Boolean        @default(false)
+  donorCount        Int            @default(0)
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  donations         Donation[]
+  expenses          Expense[]
+  aidDistributions  AidDistribution[]
+
+  @@index([status])
+  @@index([category])
+}
+
+model Donation {
+  id               String         @id @default(cuid()) @db.VarChar(25)
+  transactionNumber String        @unique @db.VarChar(40)
+  donorId          String?        @db.VarChar(25)
+  donorName        String         @db.VarChar(150)
+  donorEmail       String         @db.VarChar(191)
+  donorPhone       String         @db.VarChar(30)
+  programId        String         @db.VarChar(25)
+  programTitle     String         @db.VarChar(150)
+  donationType     DonationType
+  amount           Decimal        @db.Decimal(18, 2)
+  paymentMethod    PaymentMethod
+  destinationAccount String       @db.VarChar(100)
+  paymentReference String?        @db.VarChar(120)
+  paymentProofUrl  String?        @db.VarChar(255)
+  paymentStatus    DonationStatus @default(menunggu_verifikasi)
+  isAnonymous      Boolean        @default(false)
+  donorMessage     String?        @db.Text
+  donatedAt        DateTime       @default(now())
+  verifiedById     String?        @db.VarChar(25)
+  verifiedAt       DateTime?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  donor            Donor?         @relation(fields: [donorId], references: [id], onDelete: SetNull)
+  program          Program        @relation(fields: [programId], references: [id], onDelete: Restrict)
+  verifiedBy       User?          @relation("DonationVerifiedBy", fields: [verifiedById], references: [id], onDelete: SetNull)
+
+  @@index([programId])
+  @@index([paymentStatus])
+  @@index([donorEmail])
+}
+
+model Expense {
+  id             String        @id @default(cuid()) @db.VarChar(25)
+  expenseNumber  String        @unique @db.VarChar(40)
+  programId      String?       @db.VarChar(25)
+  programTitle   String?       @db.VarChar(150)
+  category       ExpenseCategory
+  transactionDate DateTime
+  recipientName  String        @db.VarChar(150)
+  amount         Decimal       @db.Decimal(18, 2)
+  purpose        String        @db.VarChar(200)
+  description    String        @db.Text
+  paymentMethod  PaymentMethod
+  receiptFileUrl String?       @db.VarChar(255)
+  status         ExpenseStatus @default(diajukan)
+  submittedById  String        @db.VarChar(25)
+  approvedById   String?       @db.VarChar(25)
+  approvedAt     DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  program        Program?      @relation(fields: [programId], references: [id], onDelete: SetNull)
+  submittedBy    User          @relation("ExpenseSubmittedBy", fields: [submittedById], references: [id], onDelete: Restrict)
+  approvedBy     User?         @relation("ExpenseApprovedBy", fields: [approvedById], references: [id], onDelete: SetNull)
+
+  @@index([programId])
+  @@index([status])
+}
+
+model AidDistribution {
+  id                String        @id @default(cuid()) @db.VarChar(25)
+  distributionNumber String        @unique @db.VarChar(40)
+  childId           String        @db.VarChar(25)
+  childName         String        @db.VarChar(150)
+  guardianName      String        @db.VarChar(150)
+  programId         String?       @db.VarChar(25)
+  programTitle      String?       @db.VarChar(150)
+  aidType           String        @db.VarChar(100)
+  distributionDate  DateTime
+  amount            Decimal       @db.Decimal(18, 2)
+  itemDescription   String        @db.Text
+  sourceOfFunds     String        @db.VarChar(150)
+  officerId         String        @db.VarChar(25)
+  officerName       String        @db.VarChar(150)
+  location          String        @db.Text
+  receiptSignatureUrl String?     @db.VarChar(255)
+  photoUrl          String?       @db.VarChar(255)
+  status            AidStatus     @default(dijadwalkan)
+  notes             String?       @db.Text
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  child             Child         @relation(fields: [childId], references: [id], onDelete: Cascade)
+  program           Program?      @relation(fields: [programId], references: [id], onDelete: SetNull)
+  officer           User          @relation("AidOfficer", fields: [officerId], references: [id], onDelete: Restrict)
+
+  @@index([childId])
+  @@index([programId])
+  @@index([status])
+}
+
+model BankAccount {
+  id             String   @id @default(cuid()) @db.VarChar(25)
+  bankName       String   @db.VarChar(100)
+  accountNumber  String   @unique @db.VarChar(50)
+  accountHolder  String   @db.VarChar(150)
+  accountType    String   @db.VarChar(50)
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model AuditLog {
+  id          String   @id @default(cuid()) @db.VarChar(25)
+  actorUserId String?  @db.VarChar(25)
+  action      String   @db.VarChar(150)
+  entityType  String   @db.VarChar(100)
+  entityId    String?  @db.VarChar(25)
+  description String   @db.Text
+  metadata    Json?
+  ipAddress   String?  @db.VarChar(45)
+  userAgent   String?  @db.Text
+  createdAt   DateTime @default(now())
+
+  actorUser   User?    @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([entityType, entityId])
+}
+
+model Notification {
+  id          String             @id @default(cuid()) @db.VarChar(25)
+  userId      String?            @db.VarChar(25)
+  title       String             @db.VarChar(150)
+  message     String             @db.Text
+  channel     NotificationChannel @default(in_app)
+  isRead      Boolean            @default(false)
+  readAt      DateTime?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  user        User?              @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, isRead])
+}
+
+model SystemSetting {
+  key         String   @id @db.VarChar(120)
+  value       Json
+  description String?  @db.Text
+  updatedAt   DateTime @updatedAt
+}
+
+model NewsItem {
+  id            String    @id @default(cuid()) @db.VarChar(25)
+  title         String    @db.VarChar(200)
+  slug          String    @unique @db.VarChar(220)
+  summary       String    @db.Text
+  content       String    @db.LongText
+  coverImage    String?   @db.VarChar(255)
+  publishedAt   DateTime?
+  isPublished   Boolean   @default(false)
+  createdById   String?   @db.VarChar(25)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  createdBy     User?     @relation("NewsCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([isPublished, publishedAt])
+}
+
+model GalleryItem {
+  id          String   @id @default(cuid()) @db.VarChar(25)
+  title       String   @db.VarChar(150)
+  imageUrl    String   @db.VarChar(255)
+  caption     String?  @db.Text
+  category    String   @db.VarChar(100)
+  isPublic    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
