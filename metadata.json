@@ -1,0 +1,6 @@
+{
+  "name": "YatimCare - Sistem Informasi Yayasan Yatim Piatu",
+  "description": "Sistem Informasi Terpadu Yayasan Yatim Piatu untuk pendataan anak yatim/piatu, pengajuan wali, pengelolaan donatur, donasi masuk & pengeluaran, peta sebaran lokasi, dan laporan keuangan transparan.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
