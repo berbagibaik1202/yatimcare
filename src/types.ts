@@ -257,6 +257,13 @@ export interface FinancialSummary {
   pendingVerificationsCount: number;
 }
 
+export interface SystemSetting {
+  key: string;
+  value: string | number | boolean | null | Record<string, unknown> | Array<unknown>;
+  description?: string;
+  updatedAt: string;
+}
+
 export interface AuditLog {
   id: string;
   userId: string;

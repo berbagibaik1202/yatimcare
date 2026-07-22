@@ -64,7 +64,8 @@ router.get(
       bankAccounts,
       auditLogs,
       news,
-      gallery
+      gallery,
+      systemSettings
     ] = await Promise.all([
       prisma.user.findMany({ orderBy: { createdAt: 'asc' } }),
       prisma.guardian.findMany({ orderBy: { createdAt: 'asc' } }),
@@ -102,7 +103,8 @@ router.get(
         orderBy: { createdAt: 'desc' },
         include: { createdBy: true }
       }),
-      prisma.galleryItem.findMany({ orderBy: { createdAt: 'desc' } })
+      prisma.galleryItem.findMany({ orderBy: { createdAt: 'desc' } }),
+      prisma.systemSetting.findMany({ orderBy: { key: 'asc' } })
     ]);
 
     const hideSensitiveData = currentUser?.role === 'bendahara';
@@ -327,6 +329,12 @@ router.get(
         auditLogs: visibleAuditLogs.map((entry: any) => mapAuditLog(entry)),
         news: news.map((item: any) => mapNewsItem(item)),
         gallery: gallery.map((item: any) => mapGalleryItem(item)),
+        systemSettings: systemSettings.map((setting: any) => ({
+          key: setting.key,
+          value: setting.value,
+          description: setting.description ?? undefined,
+          updatedAt: setting.updatedAt.toISOString()
+        })),
         financialSummary: {
           totalDonationReceived: successfulDonations.reduce((sum: number, donation: any) => sum + toNumber(donation.amount), 0),
           totalExpenseApproved: approvedExpenses.reduce((sum: number, expense: any) => sum + toNumber(expense.amount), 0),

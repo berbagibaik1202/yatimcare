@@ -5,6 +5,8 @@ import { SurveyManager } from './SurveyManager';
 import { AidDistributionManager } from './AidDistributionManager';
 import { DonationsManager } from '../donations/DonationsManager';
 import { DonorsListManager } from './DonorsListManager';
+import { AdminUsersManager } from './AdminUsersManager';
+import { AppSettingsManager } from './AppSettingsManager';
 import { FinancialManager } from '../finance/FinancialManager';
 import { AuditLogView } from './AuditLogView';
 import {
@@ -16,20 +18,23 @@ import {
   MapPin,
   PieChart,
   RotateCcw,
-  UserCheck
+  UserCheck,
+  Settings2,
+  Shield
 } from 'lucide-react';
 
 interface AdminDashboardProps {
   onRefreshData: () => void;
 }
 
-type AdminTabId = 'overview' | 'children' | 'donors' | 'survey' | 'aid' | 'donations' | 'finance' | 'audit';
+type AdminTabId = 'overview' | 'children' | 'donors' | 'survey' | 'aid' | 'donations' | 'finance' | 'audit' | 'users' | 'settings';
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onRefreshData }) => {
   const [activeAdminSubTab, setActiveAdminSubTab] = useState<AdminTabId>('overview');
   const currentUser = db.getCurrentUser();
   const summary = db.getFinancialSummary();
   const isTreasurer = currentUser?.role === 'bendahara';
+  const canManageAdminUsers = currentUser?.role === 'super_admin' || currentUser?.role === 'admin';
 
   const adminTabs = useMemo(
     () =>
@@ -49,9 +54,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onRefreshData })
             { id: 'aid', label: 'Penyaluran Bantuan', icon: Heart },
             { id: 'donations', label: 'Donasi Masuk', icon: DollarSign },
             { id: 'finance', label: 'Buku Kas & Pengeluaran', icon: FileCheck },
-            { id: 'audit', label: 'Audit Log Aktivitas', icon: ShieldCheck }
+            { id: 'audit', label: 'Audit Log Aktivitas', icon: ShieldCheck },
+            ...(canManageAdminUsers ? [
+              { id: 'users', label: 'User Aplikasi', icon: Shield },
+              { id: 'settings', label: 'Nama Aplikasi', icon: Settings2 }
+            ] : [])
           ]) as Array<{ id: AdminTabId; label: string; icon: React.ComponentType<{ className?: string }> }>,
-    [isTreasurer]
+    [canManageAdminUsers, isTreasurer]
   );
 
   useEffect(() => {
@@ -209,6 +218,28 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onRefreshData })
                   <p className="font-normal text-slate-500 text-[11px] mt-0.5">Riwayat aktivitas pengguna dan sistem.</p>
                 </button>
               )}
+
+              {canManageAdminUsers && (
+                <>
+                  <button
+                    onClick={() => setActiveAdminSubTab('users')}
+                    className="p-5 rounded-2xl bg-slate-50 hover:bg-emerald-50 hover:border-emerald-200 border border-slate-200 text-left transition-all cursor-pointer group"
+                  >
+                    <Shield className="w-5 h-5 text-emerald-600 mb-2" />
+                    <p className="font-bold text-sm text-slate-900 group-hover:text-emerald-800">User Aplikasi →</p>
+                    <p className="font-normal text-slate-500 text-[11px] mt-0.5">Lihat daftar akun admin dan staf aplikasi.</p>
+                  </button>
+
+                  <button
+                    onClick={() => setActiveAdminSubTab('settings')}
+                    className="p-5 rounded-2xl bg-slate-50 hover:bg-emerald-50 hover:border-emerald-200 border border-slate-200 text-left transition-all cursor-pointer group"
+                  >
+                    <Settings2 className="w-5 h-5 text-emerald-600 mb-2" />
+                    <p className="font-bold text-sm text-slate-900 group-hover:text-emerald-800">Nama Aplikasi →</p>
+                    <p className="font-normal text-slate-500 text-[11px] mt-0.5">Atur nama yang tampil di seluruh aplikasi.</p>
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -221,6 +252,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onRefreshData })
       {activeAdminSubTab === 'donations' && <DonationsManager onRefreshData={onRefreshData} />}
       {activeAdminSubTab === 'finance' && <FinancialManager onRefreshData={onRefreshData} />}
       {activeAdminSubTab === 'audit' && !isTreasurer && <AuditLogView onRefreshData={onRefreshData} />}
+      {activeAdminSubTab === 'users' && canManageAdminUsers && <AdminUsersManager onRefreshData={onRefreshData} />}
+      {activeAdminSubTab === 'settings' && canManageAdminUsers && <AppSettingsManager onRefreshData={onRefreshData} />}
     </div>
   );
 };

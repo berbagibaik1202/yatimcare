@@ -33,6 +33,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onLogout
 }) => {
   const currentUser = db.getCurrentUser();
+  const appName = db.getAppName();
 
   const roleLabels: Record<UserRole, { label: string; bg: string; color: string }> = {
     super_admin: { label: 'Super Admin', bg: 'bg-purple-100', color: 'text-purple-800' },
@@ -68,7 +69,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
             <div>
               <div className="flex items-center gap-1.5">
-                <span className="font-serif font-extrabold text-xl text-slate-900 tracking-tight">YatimCare</span>
+                <span className="font-serif font-extrabold text-xl text-slate-900 tracking-tight">{appName}</span>
                 <span className="text-[9px] uppercase tracking-wider font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded-full">
                   Yayasan
                 </span>

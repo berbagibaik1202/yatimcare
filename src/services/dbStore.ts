@@ -14,6 +14,7 @@ import {
   NewsItem,
   GalleryItem,
   FinancialSummary,
+  SystemSetting,
 } from '../types';
 type BootstrapPayload = {
   users: User[];
@@ -29,6 +30,7 @@ type BootstrapPayload = {
   auditLogs: AuditLog[];
   news: NewsItem[];
   gallery: GalleryItem[];
+  systemSettings: SystemSetting[];
   financialSummary: FinancialSummary;
   currentUser: User | null;
 };
@@ -47,6 +49,7 @@ class DatabaseStore {
   private auditLogs: AuditLog[] = [];
   private news: NewsItem[] = [];
   private gallery: GalleryItem[] = [];
+  private systemSettings: SystemSetting[] = [];
   private currentUser: User | null = null;
   private financialSummary: FinancialSummary | null = null;
   private loadingPromise: Promise<void> | null = null;
@@ -101,6 +104,7 @@ class DatabaseStore {
     this.auditLogs = data.auditLogs ?? [];
     this.news = data.news ?? [];
     this.gallery = data.gallery ?? [];
+    this.systemSettings = data.systemSettings ?? [];
     this.currentUser = data.currentUser ?? null;
     this.financialSummary = data.financialSummary ?? null;
   }
@@ -171,6 +175,41 @@ class DatabaseStore {
 
   public getUsers(): User[] {
     return this.users;
+  }
+
+  public getSystemSettings(): SystemSetting[] {
+    return this.systemSettings;
+  }
+
+  public getSystemSettingValue(key: string): SystemSetting['value'] | undefined {
+    return this.systemSettings.find(setting => setting.key === key)?.value;
+  }
+
+  public getAppName(): string {
+    const appName = this.getSystemSettingValue('app_name');
+    if (typeof appName === 'string' && appName.trim()) {
+      return appName;
+    }
+
+    return 'YatimCare';
+  }
+
+  public async updateSystemSetting(
+    key: string,
+    value: SystemSetting['value'],
+    description?: string
+  ): Promise<SystemSetting> {
+    const data = await this.requestJson<SystemSetting>(`/api/settings/${key}`, {
+      method: 'PUT',
+      body: JSON.stringify({ value, description })
+    }, 'Gagal memperbarui pengaturan sistem');
+
+    if (!data) {
+      throw new Error('Gagal memperbarui pengaturan sistem');
+    }
+
+    await this.load(true);
+    return data;
   }
 
   // --- CHILDREN ---
