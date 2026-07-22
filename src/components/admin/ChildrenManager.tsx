@@ -36,10 +36,24 @@ export const ChildrenManager: React.FC<ChildrenManagerProps> = ({ onRefreshData 
   const [filterStatus, setFilterStatus] = useState<string>('all');
 
   const [selectedChildForModal, setSelectedChildForModal] = useState<Child | null>(null);
+  const [selectedChildForEdit, setSelectedChildForEdit] = useState<Child | null>(null);
   const [selectedChildForPrint, setSelectedChildForPrint] = useState<Child | undefined>(undefined);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
 
   const [verificationNotes, setVerificationNotes] = useState('');
+  const [childEditForm, setChildEditForm] = useState({
+    fullName: '',
+    guardianName: '',
+    guardianPhone: '',
+    orphanCategory: 'yatim' as OrphanCategory,
+    schoolName: '',
+    schoolGrade: '',
+    address: '',
+    village: '',
+    district: '',
+    status: 'menunggu_verifikasi' as VerificationStatus,
+    verificationNotes: ''
+  });
 
   const filteredChildren = childrenList.filter(child => {
     const matchesSearch =
@@ -54,12 +68,82 @@ export const ChildrenManager: React.FC<ChildrenManagerProps> = ({ onRefreshData 
     return matchesSearch && matchesCategory && matchesStatus;
   });
 
-  const handleVerify = (childId: string, status: 'aktif' | 'ditolak' | 'perlu_perbaikan') => {
-    db.verifyChild(childId, status, verificationNotes || `Status diperbarui menjadi ${status}`);
-    onRefreshData();
-    setSelectedChildForModal(null);
-    setVerificationNotes('');
-    alert(`Status verifikasi anak berhasil diubah menjadi: ${status.toUpperCase()}`);
+  const openEditChildModal = (child: Child) => {
+    setChildEditForm({
+      fullName: child.fullName,
+      guardianName: child.guardianName,
+      guardianPhone: child.guardianPhone || '',
+      orphanCategory: child.orphanCategory,
+      schoolName: child.schoolName,
+      schoolGrade: child.schoolGrade || '',
+      address: child.address,
+      village: child.village,
+      district: child.district,
+      status: child.status,
+      verificationNotes: child.verificationNotes || ''
+    });
+    setSelectedChildForEdit(child);
+  };
+
+  const closeEditChildModal = () => {
+    setSelectedChildForEdit(null);
+  };
+
+  const handleVerify = async (childId: string, status: 'aktif' | 'ditolak' | 'perlu_perbaikan') => {
+    try {
+      await db.verifyChildRecord(childId, status, verificationNotes || `Status diperbarui menjadi ${status}`);
+      onRefreshData();
+      setSelectedChildForModal(null);
+      setVerificationNotes('');
+      alert(`Status verifikasi anak berhasil diubah menjadi: ${status.toUpperCase()}`);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Gagal memperbarui status anak');
+    }
+  };
+
+  const handleSaveChildEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedChildForEdit) {
+      return;
+    }
+
+    try {
+      await db.updateChildRecord(selectedChildForEdit.id, {
+        fullName: childEditForm.fullName,
+        guardianName: childEditForm.guardianName,
+        guardianPhone: childEditForm.guardianPhone,
+        orphanCategory: childEditForm.orphanCategory,
+        schoolName: childEditForm.schoolName,
+        schoolGrade: childEditForm.schoolGrade,
+        address: childEditForm.address,
+        village: childEditForm.village,
+        district: childEditForm.district,
+        status: childEditForm.status,
+        verificationNotes: childEditForm.verificationNotes
+      });
+
+      onRefreshData();
+      setSelectedChildForEdit(null);
+      alert('Data anak berhasil diperbarui.');
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Gagal memperbarui data anak');
+    }
+  };
+
+  const handleDeleteChild = async (child: Child) => {
+    const confirmDelete = confirm(`Hapus data anak "${child.fullName}"? Tindakan ini tidak bisa dibatalkan.`);
+    if (!confirmDelete) {
+      return;
+    }
+
+    try {
+      await db.deleteChildRecord(child.id);
+      onRefreshData();
+      setSelectedChildForModal(null);
+      alert('Data anak berhasil dihapus.');
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Gagal menghapus data anak');
+    }
   };
 
   const handlePrintBiodata = (child: Child) => {
@@ -305,6 +389,20 @@ export const ChildrenManager: React.FC<ChildrenManagerProps> = ({ onRefreshData 
                       Detail / Verifikasi
                     </button>
                     <button
+                      onClick={() => openEditChildModal(child)}
+                      className="px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-lg text-[11px] font-bold transition-colors cursor-pointer"
+                      title="Ubah Data"
+                    >
+                      <Edit className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteChild(child)}
+                      className="px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg text-[11px] font-bold transition-colors cursor-pointer"
+                      title="Hapus Data"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                    <button
                       onClick={() => handlePrintBiodata(child)}
                       className="px-2 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded-lg text-[11px] font-bold transition-colors cursor-pointer"
                       title="Cetak Biodata"
@@ -409,6 +507,147 @@ export const ChildrenManager: React.FC<ChildrenManagerProps> = ({ onRefreshData 
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Edit Child Modal */}
+      {selectedChildForEdit && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 overflow-y-auto">
+          <form onSubmit={handleSaveChildEdit} className="bg-white rounded-3xl max-w-3xl w-full p-6 sm:p-8 shadow-2xl border border-slate-100 my-8 space-y-6">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+              <div>
+                <h3 className="font-serif font-bold text-lg text-slate-900">Ubah Data Anak</h3>
+                <p className="text-xs text-slate-500">Perbarui data inti yang tampil di portal admin.</p>
+              </div>
+              <button
+                type="button"
+                onClick={closeEditChildModal}
+                className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+                title="Tutup Modal"
+                aria-label="Tutup Modal"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+              <label className="space-y-1.5">
+                <span className="font-bold text-slate-700">Nama Anak</span>
+                <input
+                  value={childEditForm.fullName}
+                  onChange={(e) => setChildEditForm(prev => ({ ...prev, fullName: e.target.value }))}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                />
+              </label>
+              <label className="space-y-1.5">
+                <span className="font-bold text-slate-700">Kategori</span>
+                <select
+                  value={childEditForm.orphanCategory}
+                  onChange={(e) => setChildEditForm(prev => ({ ...prev, orphanCategory: e.target.value as OrphanCategory }))}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                >
+                  <option value="yatim">Yatim</option>
+                  <option value="piatu">Piatu</option>
+                  <option value="yatim_piatu">Yatim Piatu</option>
+                </select>
+              </label>
+              <label className="space-y-1.5">
+                <span className="font-bold text-slate-700">Nama Wali</span>
+                <input
+                  value={childEditForm.guardianName}
+                  onChange={(e) => setChildEditForm(prev => ({ ...prev, guardianName: e.target.value }))}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                />
+              </label>
+              <label className="space-y-1.5">
+                <span className="font-bold text-slate-700">Kontak Wali</span>
+                <input
+                  value={childEditForm.guardianPhone}
+                  onChange={(e) => setChildEditForm(prev => ({ ...prev, guardianPhone: e.target.value }))}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                />
+              </label>
+              <label className="space-y-1.5">
+                <span className="font-bold text-slate-700">Sekolah</span>
+                <input
+                  value={childEditForm.schoolName}
+                  onChange={(e) => setChildEditForm(prev => ({ ...prev, schoolName: e.target.value }))}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                />
+              </label>
+              <label className="space-y-1.5">
+                <span className="font-bold text-slate-700">Kelas</span>
+                <input
+                  value={childEditForm.schoolGrade}
+                  onChange={(e) => setChildEditForm(prev => ({ ...prev, schoolGrade: e.target.value }))}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                />
+              </label>
+              <label className="sm:col-span-2 space-y-1.5">
+                <span className="font-bold text-slate-700">Alamat</span>
+                <textarea
+                  value={childEditForm.address}
+                  onChange={(e) => setChildEditForm(prev => ({ ...prev, address: e.target.value }))}
+                  rows={3}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                />
+              </label>
+              <label className="space-y-1.5">
+                <span className="font-bold text-slate-700">Desa</span>
+                <input
+                  value={childEditForm.village}
+                  onChange={(e) => setChildEditForm(prev => ({ ...prev, village: e.target.value }))}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                />
+              </label>
+              <label className="space-y-1.5">
+                <span className="font-bold text-slate-700">Kecamatan</span>
+                <input
+                  value={childEditForm.district}
+                  onChange={(e) => setChildEditForm(prev => ({ ...prev, district: e.target.value }))}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                />
+              </label>
+              <label className="space-y-1.5">
+                <span className="font-bold text-slate-700">Status</span>
+                <select
+                  value={childEditForm.status}
+                  onChange={(e) => setChildEditForm(prev => ({ ...prev, status: e.target.value as VerificationStatus }))}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                >
+                  <option value="menunggu_verifikasi">Menunggu Verifikasi</option>
+                  <option value="aktif">Aktif</option>
+                  <option value="perlu_perbaikan">Perlu Perbaikan</option>
+                  <option value="ditolak">Ditolak</option>
+                </select>
+              </label>
+              <label className="sm:col-span-2 space-y-1.5">
+                <span className="font-bold text-slate-700">Catatan Verifikasi</span>
+                <textarea
+                  value={childEditForm.verificationNotes}
+                  onChange={(e) => setChildEditForm(prev => ({ ...prev, verificationNotes: e.target.value }))}
+                  rows={3}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                />
+              </label>
+            </div>
+
+            <div className="flex gap-2 pt-2 text-xs">
+              <button
+                type="button"
+                onClick={closeEditChildModal}
+                className="py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-colors cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                type="submit"
+                className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-xs transition-colors cursor-pointer"
+              >
+                Simpan Perubahan
+              </button>
+            </div>
+          </form>
         </div>
       )}
 

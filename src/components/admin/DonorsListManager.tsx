@@ -14,7 +14,10 @@ import {
   Mail,
   Phone,
   Calendar,
-  CheckCircle2
+  CheckCircle2,
+  Edit,
+  Trash2,
+  X
 } from 'lucide-react';
 
 interface DonorsListManagerProps {
@@ -25,6 +28,17 @@ export const DonorsListManager: React.FC<DonorsListManagerProps> = ({ onRefreshD
   const donors = db.getDonors();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
+  const [selectedDonorForEdit, setSelectedDonorForEdit] = useState<Donor | null>(null);
+  const [donorEditForm, setDonorEditForm] = useState({
+    fullName: '',
+    donorType: 'individu' as Donor['donorType'],
+    institutionName: '',
+    email: '',
+    phone: '',
+    address: '',
+    isAnonymousDefault: false,
+    isRecurringDonor: false
+  });
 
   const filteredDonors = donors.filter(d => {
     const matchesSearch =
@@ -40,6 +54,65 @@ export const DonorsListManager: React.FC<DonorsListManagerProps> = ({ onRefreshD
   });
 
   const totalDonationAccumulated = filteredDonors.reduce((sum, d) => sum + (d.totalDonation || 0), 0);
+
+  const openEditDonorModal = (donor: Donor) => {
+    setDonorEditForm({
+      fullName: donor.fullName,
+      donorType: donor.donorType,
+      institutionName: donor.institutionName || '',
+      email: donor.email,
+      phone: donor.phone,
+      address: donor.address || '',
+      isAnonymousDefault: donor.isAnonymousDefault,
+      isRecurringDonor: donor.isRecurringDonor
+    });
+    setSelectedDonorForEdit(donor);
+  };
+
+  const closeEditDonorModal = () => {
+    setSelectedDonorForEdit(null);
+  };
+
+  const handleSaveDonorEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedDonorForEdit) {
+      return;
+    }
+
+    try {
+      await db.updateDonorRecord(selectedDonorForEdit.id, {
+        fullName: donorEditForm.fullName,
+        donorType: donorEditForm.donorType,
+        institutionName: donorEditForm.institutionName || undefined,
+        email: donorEditForm.email,
+        phone: donorEditForm.phone,
+        address: donorEditForm.address,
+        isAnonymousDefault: donorEditForm.isAnonymousDefault,
+        isRecurringDonor: donorEditForm.isRecurringDonor
+      });
+
+      onRefreshData?.();
+      setSelectedDonorForEdit(null);
+      alert('Data donatur berhasil diperbarui.');
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Gagal memperbarui data donatur');
+    }
+  };
+
+  const handleDeleteDonor = async (donor: Donor) => {
+    const confirmDelete = confirm(`Hapus data donatur "${donor.fullName}"? Tindakan ini tidak bisa dibatalkan.`);
+    if (!confirmDelete) {
+      return;
+    }
+
+    try {
+      await db.deleteDonorRecord(donor.id);
+      onRefreshData?.();
+      alert('Data donatur berhasil dihapus.');
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Gagal menghapus data donatur');
+    }
+  };
 
   const handleExportCSV = () => {
     const headers = [
@@ -186,12 +259,13 @@ export const DonorsListManager: React.FC<DonorsListManagerProps> = ({ onRefreshD
                 <th className="pb-3 px-2">Komitmen</th>
                 <th className="pb-3 px-2 text-right">Total Donasi</th>
                 <th className="pb-3 px-2 text-center">Transaksi</th>
+                <th className="pb-3 px-2 text-right">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-700 font-medium">
               {filteredDonors.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-8 text-center text-slate-400">
+                  <td colSpan={8} className="py-8 text-center text-slate-400">
                     Tidak ada data donatur yang sesuai pencarian.
                   </td>
                 </tr>
@@ -248,6 +322,23 @@ export const DonorsListManager: React.FC<DonorsListManagerProps> = ({ onRefreshD
                     <td className="py-3.5 px-2 text-center font-bold text-slate-800">
                       {donor.transactionCount || 0}x
                     </td>
+
+                    <td className="py-3.5 px-2 text-right space-x-1">
+                      <button
+                        onClick={() => openEditDonorModal(donor)}
+                        className="px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-lg text-[11px] font-bold transition-colors cursor-pointer"
+                        title="Ubah Data Donatur"
+                      >
+                        <Edit className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteDonor(donor)}
+                        className="px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg text-[11px] font-bold transition-colors cursor-pointer"
+                        title="Hapus Donatur"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </td>
                   </tr>
                 ))
               )}
@@ -255,6 +346,127 @@ export const DonorsListManager: React.FC<DonorsListManagerProps> = ({ onRefreshD
           </table>
         </div>
       </div>
+
+      {selectedDonorForEdit && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 overflow-y-auto">
+          <form onSubmit={handleSaveDonorEdit} className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-slate-100 my-8 space-y-6">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+              <div>
+                <h3 className="font-serif font-bold text-lg text-slate-900">Ubah Data Donatur</h3>
+                <p className="text-xs text-slate-500">Perbarui profil dan komitmen donatur.</p>
+              </div>
+              <button
+                type="button"
+                onClick={closeEditDonorModal}
+                className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+                aria-label="Tutup Modal"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+              <label className="space-y-1.5">
+                <span className="font-bold text-slate-700">Nama Donatur</span>
+                <input
+                  value={donorEditForm.fullName}
+                  onChange={(e) => setDonorEditForm(prev => ({ ...prev, fullName: e.target.value }))}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                />
+              </label>
+
+              <label className="space-y-1.5">
+                <span className="font-bold text-slate-700">Kategori</span>
+                <select
+                  value={donorEditForm.donorType}
+                  onChange={(e) => setDonorEditForm(prev => ({ ...prev, donorType: e.target.value as Donor['donorType'] }))}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                >
+                  <option value="individu">Individu</option>
+                  <option value="perusahaan">Perusahaan</option>
+                  <option value="organisasi">Organisasi</option>
+                  <option value="komunitas">Komunitas</option>
+                  <option value="anonim">Anonim</option>
+                </select>
+              </label>
+
+              <label className="space-y-1.5">
+                <span className="font-bold text-slate-700">Instansi / Perusahaan</span>
+                <input
+                  value={donorEditForm.institutionName}
+                  onChange={(e) => setDonorEditForm(prev => ({ ...prev, institutionName: e.target.value }))}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                />
+              </label>
+
+              <label className="space-y-1.5">
+                <span className="font-bold text-slate-700">Email</span>
+                <input
+                  type="email"
+                  value={donorEditForm.email}
+                  onChange={(e) => setDonorEditForm(prev => ({ ...prev, email: e.target.value }))}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                />
+              </label>
+
+              <label className="space-y-1.5">
+                <span className="font-bold text-slate-700">Nomor Kontak</span>
+                <input
+                  value={donorEditForm.phone}
+                  onChange={(e) => setDonorEditForm(prev => ({ ...prev, phone: e.target.value }))}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                />
+              </label>
+
+              <label className="sm:col-span-2 space-y-1.5">
+                <span className="font-bold text-slate-700">Alamat</span>
+                <textarea
+                  rows={3}
+                  value={donorEditForm.address}
+                  onChange={(e) => setDonorEditForm(prev => ({ ...prev, address: e.target.value }))}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                />
+              </label>
+
+              <label className="flex items-center gap-2 text-slate-700 font-bold">
+                <input
+                  type="checkbox"
+                  checked={donorEditForm.isRecurringDonor}
+                  onChange={(e) => setDonorEditForm(prev => ({ ...prev, isRecurringDonor: e.target.checked }))}
+                  className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                />
+                Donatur Tetap
+              </label>
+
+              <label className="flex items-center gap-2 text-slate-700 font-bold">
+                <input
+                  type="checkbox"
+                  checked={donorEditForm.isAnonymousDefault}
+                  onChange={(e) => setDonorEditForm(prev => ({ ...prev, isAnonymousDefault: e.target.checked }))}
+                  className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                />
+                Default Anonim
+              </label>
+            </div>
+
+            <div className="flex gap-2 pt-2 text-xs">
+              <button
+                type="button"
+                onClick={closeEditDonorModal}
+                className="py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-colors cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                type="submit"
+                className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-xs transition-colors cursor-pointer"
+              >
+                Simpan Perubahan
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 };

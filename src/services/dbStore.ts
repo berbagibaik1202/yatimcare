@@ -105,6 +105,25 @@ class DatabaseStore {
     this.financialSummary = data.financialSummary ?? null;
   }
 
+  private async requestJson<T>(path: string, init: RequestInit, fallbackMessage: string): Promise<T | undefined> {
+    const response = await fetch(path, {
+      credentials: 'include',
+      ...init,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(init.headers ?? {})
+      }
+    });
+
+    const payload = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(payload?.message ?? fallbackMessage);
+    }
+
+    return payload.data as T;
+  }
+
   private persist() {
     // Backend is the source of truth; keep this as an in-memory no-op.
   }
@@ -161,6 +180,40 @@ class DatabaseStore {
 
   public getChildById(id: string): Child | undefined {
     return this.children.find(c => c.id === id);
+  }
+
+  public async updateChildRecord(id: string, updates: Partial<Child>): Promise<Child> {
+    const data = await this.requestJson<Child>(`/api/children/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(updates)
+    }, 'Gagal memperbarui data anak');
+
+    if (!data) {
+      throw new Error('Gagal memperbarui data anak');
+    }
+
+    await this.load(true);
+    return data;
+  }
+
+  public async verifyChildRecord(id: string, status: 'aktif' | 'ditolak' | 'perlu_perbaikan', notes?: string): Promise<Child> {
+    const current = this.getChildById(id);
+    if (!current) {
+      throw new Error('Data anak tidak ditemukan');
+    }
+
+    return this.updateChildRecord(id, {
+      status,
+      verificationNotes: notes
+    });
+  }
+
+  public async deleteChildRecord(id: string): Promise<void> {
+    await this.requestJson<void>(`/api/children/${id}`, {
+      method: 'DELETE'
+    }, 'Gagal menghapus data anak');
+
+    await this.load(true);
   }
 
   public addChild(childData: Omit<Child, 'id' | 'registrationNumber' | 'totalAidReceived'>): Child {
@@ -224,6 +277,32 @@ class DatabaseStore {
   // --- DONORS & DONATIONS ---
   public getDonors(): Donor[] {
     return this.donors;
+  }
+
+  public getDonorById(id: string): Donor | undefined {
+    return this.donors.find(d => d.id === id);
+  }
+
+  public async updateDonorRecord(id: string, updates: Partial<Donor>): Promise<Donor> {
+    const data = await this.requestJson<Donor>(`/api/donors/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(updates)
+    }, 'Gagal memperbarui data donatur');
+
+    if (!data) {
+      throw new Error('Gagal memperbarui data donatur');
+    }
+
+    await this.load(true);
+    return data;
+  }
+
+  public async deleteDonorRecord(id: string): Promise<void> {
+    await this.requestJson<void>(`/api/donors/${id}`, {
+      method: 'DELETE'
+    }, 'Gagal menghapus data donatur');
+
+    await this.load(true);
   }
 
   public registerDonor(donorData: {

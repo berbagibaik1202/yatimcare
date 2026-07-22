@@ -54,5 +54,38 @@ router.post(
   })
 );
 
-export default router;
+router.put(
+  '/:id',
+  asyncHandler(async (req, res) => {
+    const input = donorCreateSchema.partial().parse(req.body);
 
+    const updated = await prisma.donor.update({
+      where: { id: req.params.id },
+      data: {
+        fullName: input.fullName,
+        donorType: input.donorType,
+        institutionName: input.institutionName,
+        email: input.email,
+        phone: input.phone,
+        address: input.address,
+        isAnonymousDefault: input.isAnonymousDefault,
+        isRecurringDonor: input.isRecurringDonor
+      }
+    });
+
+    res.json({ data: updated });
+  })
+);
+
+router.delete(
+  '/:id',
+  asyncHandler(async (req, res) => {
+    await prisma.donor.delete({
+      where: { id: req.params.id }
+    });
+
+    res.status(204).send();
+  })
+);
+
+export default router;

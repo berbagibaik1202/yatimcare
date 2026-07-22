@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { Program, Child, NewsItem, FinancialSummary } from '../../types';
 import { db } from '../../services/dbStore';
+import { CountUpNumber } from '../common/CountUpNumber';
 
 interface PublicLandingProps {
   onOpenDonationModal: (programId?: string) => void;
@@ -114,25 +115,31 @@ export const PublicLanding: React.FC<PublicLandingProps> = ({
                 <div className="grid grid-cols-2 gap-4">
                   <div className="p-4 rounded-2xl bg-white/10 border border-white/10">
                     <p className="text-xs text-emerald-200 font-medium">Anak Terdaftar</p>
-                    <p className="text-2xl font-black text-white mt-1">
-                      {financialSummary.totalActiveChildren} <span className="text-xs font-normal text-emerald-200">Anak</span>
-                    </p>
+                    <CountUpNumber
+                      value={financialSummary.totalActiveChildren}
+                      className="text-2xl font-black text-white mt-1 inline-flex items-baseline gap-1"
+                      suffix=" Anak"
+                    />
                     <p className="text-[11px] text-amber-300 mt-1 font-semibold">Yatim, Piatu & YP</p>
                   </div>
 
                   <div className="p-4 rounded-2xl bg-white/10 border border-white/10">
                     <p className="text-xs text-emerald-200 font-medium">Total Donatur</p>
-                    <p className="text-2xl font-black text-white mt-1">
-                      {financialSummary.totalActiveDonors} <span className="text-xs font-normal text-emerald-200">Orang</span>
-                    </p>
+                    <CountUpNumber
+                      value={financialSummary.totalActiveDonors}
+                      className="text-2xl font-black text-white mt-1 inline-flex items-baseline gap-1"
+                      suffix=" Orang"
+                    />
                     <p className="text-[11px] text-amber-300 mt-1 font-semibold">Aktif & Dermawan</p>
                   </div>
 
                   <div className="p-4 rounded-2xl bg-white/10 border border-white/10 col-span-2">
                     <p className="text-xs text-emerald-200 font-medium">Total Dana Bantuan Disalurkan</p>
-                    <p className="text-3xl font-black text-amber-300 mt-1">
-                      Rp {financialSummary.totalDistributedAid.toLocaleString('id-ID')}
-                    </p>
+                    <CountUpNumber
+                      value={financialSummary.totalDistributedAid}
+                      className="text-3xl font-black text-amber-300 mt-1 inline-flex items-baseline gap-1"
+                      prefix="Rp "
+                    />
                     <div className="mt-3 w-full bg-black/20 h-2 rounded-full overflow-hidden">
                       <div className="bg-amber-400 h-full rounded-full" style={{ width: '88%' }} />
                     </div>
@@ -158,24 +165,28 @@ export const PublicLanding: React.FC<PublicLandingProps> = ({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-xs text-center space-y-1">
-            <p className="text-3xl font-black text-slate-900">{financialSummary.totalOrphanYatim}</p>
+            <CountUpNumber value={financialSummary.totalOrphanYatim} className="text-3xl font-black text-slate-900" />
             <p className="text-xs font-bold text-emerald-700 uppercase tracking-wider">Anak Yatim</p>
             <p className="text-[11px] text-slate-500">Ayah Meninggal Dunia</p>
           </div>
           <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-xs text-center space-y-1">
-            <p className="text-3xl font-black text-slate-900">{financialSummary.totalOrphanPiatu}</p>
+            <CountUpNumber value={financialSummary.totalOrphanPiatu} className="text-3xl font-black text-slate-900" />
             <p className="text-xs font-bold text-blue-700 uppercase tracking-wider">Anak Piatu</p>
             <p className="text-[11px] text-slate-500">Ibu Meninggal Dunia</p>
           </div>
           <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-xs text-center space-y-1">
-            <p className="text-3xl font-black text-slate-900">{financialSummary.totalOrphanYatimPiatu}</p>
+            <CountUpNumber value={financialSummary.totalOrphanYatimPiatu} className="text-3xl font-black text-slate-900" />
             <p className="text-xs font-bold text-rose-700 uppercase tracking-wider">Anak Yatim Piatu</p>
             <p className="text-[11px] text-slate-500">Kedua Orang Tua Meninggal</p>
           </div>
           <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-xs text-center space-y-1">
-            <p className="text-3xl font-black text-emerald-700">
-              Rp {(financialSummary.currentBalance / 1000000).toFixed(1)} Jt
-            </p>
+            <CountUpNumber
+              value={financialSummary.currentBalance / 1000000}
+              decimals={1}
+              prefix="Rp "
+              suffix=" Jt"
+              className="text-3xl font-black text-emerald-700"
+            />
             <p className="text-xs font-bold text-slate-800 uppercase tracking-wider">Saldo Kas Tersedia</p>
             <p className="text-[11px] text-slate-500">Siap Penyaluran Berikutnya</p>
           </div>
@@ -274,14 +285,20 @@ export const PublicLanding: React.FC<PublicLandingProps> = ({
                     <div className="space-y-1.5 pt-2">
                       <div className="flex justify-between text-xs">
                         <span className="text-slate-500 font-medium">Terkumpul:</span>
-                        <span className="font-bold text-emerald-700">Rp {prog.collectedAmount.toLocaleString('id-ID')}</span>
+                        <CountUpNumber
+                          value={prog.collectedAmount}
+                          prefix="Rp "
+                          className="font-bold text-emerald-700"
+                        />
                       </div>
                       <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
                         <div className="bg-emerald-600 h-full rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
                       </div>
                       <div className="flex justify-between text-[11px] text-slate-500">
-                        <span>Target: Rp {prog.targetAmount.toLocaleString('id-ID')}</span>
-                        <span className="font-bold text-slate-700">{pct}%</span>
+                        <span>
+                          Target: <CountUpNumber value={prog.targetAmount} prefix="Rp " />
+                        </span>
+                        <CountUpNumber value={pct} suffix="%" className="font-bold text-slate-700" />
                       </div>
                     </div>
                   </div>

@@ -3,6 +3,7 @@ import { Prisma, VerificationStatus } from '../../generated/prisma.js';
 import { z } from 'zod';
 import { prisma } from '../../lib/prisma.js';
 import { asyncHandler } from '../../lib/asyncHandler.js';
+import { getCurrentUserFromRequest } from '../../lib/auth.js';
 
 const router = Router();
 
@@ -127,17 +128,32 @@ router.put(
   '/:id',
   asyncHandler(async (req, res) => {
     const input = childCreateSchema.partial().parse(req.body);
+    const currentUser = await getCurrentUserFromRequest(req);
+    const shouldMarkVerified = input.status !== undefined;
     const updated = await prisma.child.update({
       where: { id: req.params.id },
       data: {
         ...input,
         latitude: input.latitude !== undefined ? new Prisma.Decimal(input.latitude) : undefined,
         longitude: input.longitude !== undefined ? new Prisma.Decimal(input.longitude) : undefined,
-        status: input.status as VerificationStatus | undefined
+        status: input.status as VerificationStatus | undefined,
+        verifiedAt: shouldMarkVerified ? new Date() : undefined,
+        verifiedById: shouldMarkVerified ? currentUser?.id : undefined
       }
     });
 
     res.json({ data: updated });
+  })
+);
+
+router.delete(
+  '/:id',
+  asyncHandler(async (req, res) => {
+    await prisma.child.delete({
+      where: { id: req.params.id }
+    });
+
+    res.status(204).send();
   })
 );
 

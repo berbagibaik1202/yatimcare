@@ -33,8 +33,7 @@ async function main() {
 
   await clearDatabase();
 
-  await prisma.user.createMany({
-    data: [
+  const seedUsers = [
       {
         id: 'usr-super-admin',
         name: 'Drs. H. Rahmat Hidayat, M.Ag.',
@@ -104,10 +103,13 @@ async function main() {
         status: 'active',
         createdAt: dt('2025-02-01T14:00:00Z')
       }
-    ].map((user) => ({
+  ].map((user) => ({
       ...user,
       passwordHash: user.role === 'public' ? null : demoPasswordHash
-    }))
+    })) as unknown as Prisma.UserCreateManyInput[];
+
+  await prisma.user.createMany({
+    data: seedUsers
   });
 
   await prisma.guardian.createMany({
@@ -1002,7 +1004,9 @@ async function main() {
     return acc;
   }, {});
 
-  for (const [programId, stats] of Object.entries(successfulByProgram)) {
+  for (const [programId, stats] of Object.entries(successfulByProgram) as Array<
+    [string, { amount: Prisma.Decimal; count: number }]
+  >) {
     await prisma.program.update({
       where: { id: programId },
       data: {
