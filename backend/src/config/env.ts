@@ -78,10 +78,13 @@ if (path.resolve(cwdEnvPath) !== path.resolve(backendEnvPath)) {
   loadEnvFile(backendEnvPath, false);
 }
 
+const isProduction = (process.env.NODE_ENV ?? '').toLowerCase() === 'production';
+const defaultDatabaseHost = isProduction ? 'db' : 'localhost';
+
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().positive().default(4000),
-  DATABASE_HOST: z.string().min(1).default('localhost'),
+  DATABASE_HOST: z.string().min(1).default(defaultDatabaseHost),
   DATABASE_PORT: z.coerce.number().int().positive().default(3306),
   DATABASE_USER: z.string().min(1).default('root'),
   DATABASE_PASSWORD: z.string().optional().default(''),
