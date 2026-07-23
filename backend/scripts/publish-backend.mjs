@@ -27,4 +27,20 @@ await build({
   logLevel: 'info'
 });
 
+fs.writeFileSync(
+  path.join(backendRoot, 'server.js'),
+  [
+    "import { createRequire } from 'node:module';",
+    "const require = createRequire(import.meta.url);",
+    "console.log('[YatimCare Backend] Booting production wrapper');",
+    'try {',
+    "  require('./server.cjs');",
+    '} catch (error) {',
+    "  console.error('Failed to start backend', error);",
+    '  process.exit(1);',
+    '}',
+    ''
+  ].join('\n')
+);
+
 console.log(`Backend runtime published to ${backendRoot}`);
