@@ -153,9 +153,9 @@ export const AppSettingsManager: React.FC<AppSettingsManagerProps> = ({ onRefres
       setSaving(true);
       await db.updateSystemSetting('app_name', nextName, 'Nama aplikasi utama yang ditampilkan di seluruh portal');
       await db.updateSystemSetting('app_logo_url', appLogoUrl, 'Logo aplikasi utama yang ditampilkan di navbar dan portal');
-      await db.updateSystemSetting('donation_bank_name', nextBankName, 'Nama bank tujuan utama donasi');
-      await db.updateSystemSetting('donation_bank_number', nextBankNumber, 'Nomor rekening tujuan utama donasi');
-      await db.updateSystemSetting('donation_bank_holder', nextBankHolder, 'Nama pemilik rekening tujuan donasi');
+      await db.updateSystemSetting('donation_bank_name', nextBankName, 'Nama bank fallback donasi');
+      await db.updateSystemSetting('donation_bank_number', nextBankNumber, 'Nomor rekening fallback donasi');
+      await db.updateSystemSetting('donation_bank_holder', nextBankHolder, 'Nama pemilik rekening fallback donasi');
       onRefreshData();
       alert('Pengaturan aplikasi dan rekening donasi berhasil diperbarui.');
     } catch (error) {
@@ -217,7 +217,7 @@ export const AppSettingsManager: React.FC<AppSettingsManagerProps> = ({ onRefres
           <div className="rounded-3xl border border-emerald-100 bg-emerald-50/60 p-4 space-y-4">
             <div className="flex items-center gap-2 text-xs font-bold text-emerald-800">
               <Building2 className="w-4 h-4" />
-              <span>Rekening Donasi Utama</span>
+              <span>Rekening Fallback Sistem</span>
             </div>
 
             <div className="grid grid-cols-1 gap-3">

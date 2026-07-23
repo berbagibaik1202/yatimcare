@@ -25,6 +25,7 @@ export const DonationModal: React.FC<DonationModalProps> = ({
     bankName: 'BSI',
     accountNumber: '7123456789',
     accountHolder: 'Yayasan YatimCare',
+    accountType: 'Tabungan',
     isActive: true,
     isPublic: true,
   };

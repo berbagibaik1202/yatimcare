@@ -589,6 +589,7 @@ export const INITIAL_BANK_ACCOUNTS: BankAccount[] = [
     bankName: 'Bank Syariah Indonesia (BSI)',
     accountNumber: '7123456789',
     accountHolder: 'Yayasan Peduli YatimCare',
+    accountType: 'Giro',
     branch: 'KCP Sumedang Kota',
     isActive: true,
     isPublic: true,
@@ -599,6 +600,7 @@ export const INITIAL_BANK_ACCOUNTS: BankAccount[] = [
     bankName: 'Bank Mandiri',
     accountNumber: '1300098765432',
     accountHolder: 'Yayasan Peduli YatimCare',
+    accountType: 'Tabungan',
     branch: 'KC Sumedang',
     isActive: true,
     isPublic: true
@@ -608,6 +610,7 @@ export const INITIAL_BANK_ACCOUNTS: BankAccount[] = [
     bankName: 'Bank BCA',
     accountNumber: '14800112233',
     accountHolder: 'Yayasan Peduli YatimCare',
+    accountType: 'Tabungan',
     branch: 'KCU Bandung',
     isActive: true,
     isPublic: true

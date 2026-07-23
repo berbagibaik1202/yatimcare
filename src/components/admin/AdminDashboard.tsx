@@ -10,6 +10,7 @@ import { DonationsManager } from '../donations/DonationsManager';
 import { DonorsListManager } from './DonorsListManager';
 import { AdminUsersManager } from './AdminUsersManager';
 import { AppSettingsManager } from './AppSettingsManager';
+import { BankAccountsManager } from './BankAccountsManager';
 import { FinancialManager } from '../finance/FinancialManager';
 import { AuditLogView } from './AuditLogView';
 import {
@@ -294,7 +295,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onRefreshData })
       {activeAdminSubTab === 'finance' && <FinancialManager onRefreshData={onRefreshData} />}
       {activeAdminSubTab === 'audit' && !isTreasurer && <AuditLogView onRefreshData={onRefreshData} />}
       {activeAdminSubTab === 'users' && canManageAdminUsers && <AdminUsersManager onRefreshData={onRefreshData} />}
-      {activeAdminSubTab === 'settings' && canManageAdminUsers && <AppSettingsManager onRefreshData={onRefreshData} />}
+      {activeAdminSubTab === 'settings' && canManageAdminUsers && (
+        <div className="space-y-6">
+          <AppSettingsManager onRefreshData={onRefreshData} />
+          <BankAccountsManager onRefreshData={onRefreshData} />
+        </div>
+      )}
     </div>
   );
 };

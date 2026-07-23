@@ -242,6 +242,7 @@ export interface BankAccount {
   bankName: string;
   accountNumber: string;
   accountHolder: string;
+  accountType: string;
   branch?: string;
   isActive: boolean;
   isPublic: boolean;

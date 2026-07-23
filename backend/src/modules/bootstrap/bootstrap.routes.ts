@@ -325,6 +325,7 @@ router.get(
           bankName: bankAccount.bankName,
           accountNumber: bankAccount.accountNumber,
           accountHolder: bankAccount.accountHolder,
+          accountType: bankAccount.accountType,
           branch: undefined,
           isActive: bankAccount.isActive,
           isPublic: true,

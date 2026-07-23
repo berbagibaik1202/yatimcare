@@ -283,7 +283,17 @@ class DatabaseStore {
     return undefined;
   }
 
-  public getDonationBankInfo(): { bankName: string; accountNumber: string; accountHolder: string } | undefined {
+  public getDonationBankInfo(): { bankName: string; accountNumber: string; accountHolder: string; accountType?: string } | undefined {
+    const firstActiveBank = this.bankAccounts.find(account => account.isActive);
+    if (firstActiveBank) {
+      return {
+        bankName: firstActiveBank.bankName,
+        accountNumber: firstActiveBank.accountNumber,
+        accountHolder: firstActiveBank.accountHolder,
+        accountType: firstActiveBank.accountType
+      };
+    }
+
     const bankName = this.getSystemSettingValue('donation_bank_name');
     const accountNumber = this.getSystemSettingValue('donation_bank_number');
     const accountHolder = this.getSystemSettingValue('donation_bank_holder');
@@ -296,16 +306,8 @@ class DatabaseStore {
       return {
         bankName: bankName.trim(),
         accountNumber: accountNumber.trim(),
-        accountHolder: accountHolder.trim()
-      };
-    }
-
-    const firstActiveBank = this.bankAccounts.find(account => account.isActive);
-    if (firstActiveBank) {
-      return {
-        bankName: firstActiveBank.bankName,
-        accountNumber: firstActiveBank.accountNumber,
-        accountHolder: firstActiveBank.accountHolder
+        accountHolder: accountHolder.trim(),
+        accountType: 'Tabungan'
       };
     }
 
@@ -313,38 +315,35 @@ class DatabaseStore {
   }
 
   public getDonationBankAccounts(): BankAccount[] {
-    const primaryAccount = this.getDonationBankInfo();
     const activeBankAccounts = this.bankAccounts.filter(account => account.isActive);
 
-    const options: BankAccount[] = [];
-
-    if (primaryAccount) {
-      options.push({
-        id: 'system-donation-bank',
-        bankName: primaryAccount.bankName,
-        accountNumber: primaryAccount.accountNumber,
-        accountHolder: primaryAccount.accountHolder,
-        branch: undefined,
-        isActive: true,
-        isPublic: true,
-        logoUrl: undefined
-      });
-    }
-
-    for (const account of activeBankAccounts) {
-      if (options.some(item => item.accountNumber === account.accountNumber)) {
-        continue;
-      }
-
-      options.push({
+    if (activeBankAccounts.length > 0) {
+      return activeBankAccounts.map(account => ({
         ...account,
         branch: undefined,
         isPublic: true,
         logoUrl: undefined
-      });
+      }));
     }
 
-    return options;
+    const primaryAccount = this.getDonationBankInfo();
+    if (!primaryAccount) {
+      return [];
+    }
+
+    return [
+      {
+        id: 'system-donation-bank',
+        bankName: primaryAccount.bankName,
+        accountNumber: primaryAccount.accountNumber,
+        accountHolder: primaryAccount.accountHolder,
+        accountType: primaryAccount.accountType ?? 'Tabungan',
+        branch: undefined,
+        isActive: true,
+        isPublic: true,
+        logoUrl: undefined
+      }
+    ];
   }
 
   public async updateSystemSetting(
@@ -902,6 +901,57 @@ class DatabaseStore {
   // --- BANK ACCOUNTS ---
   public getBankAccounts(): BankAccount[] {
     return this.bankAccounts;
+  }
+
+  public async createBankAccountRecord(bankData: {
+    bankName: string;
+    accountNumber: string;
+    accountHolder: string;
+    accountType: string;
+    isActive?: boolean;
+  }): Promise<BankAccount> {
+    const data = await this.requestJson<BankAccount>('/api/bank-accounts', {
+      method: 'POST',
+      body: JSON.stringify(bankData)
+    }, 'Gagal menambahkan rekening donasi');
+
+    if (!data) {
+      throw new Error('Gagal menambahkan rekening donasi');
+    }
+
+    await this.load(true);
+    return data;
+  }
+
+  public async updateBankAccountRecord(
+    id: string,
+    updates: Partial<{
+      bankName: string;
+      accountNumber: string;
+      accountHolder: string;
+      accountType: string;
+      isActive: boolean;
+    }>
+  ): Promise<BankAccount> {
+    const data = await this.requestJson<BankAccount>(`/api/bank-accounts/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(updates)
+    }, 'Gagal memperbarui rekening donasi');
+
+    if (!data) {
+      throw new Error('Gagal memperbarui rekening donasi');
+    }
+
+    await this.load(true);
+    return data;
+  }
+
+  public async deleteBankAccountRecord(id: string): Promise<void> {
+    await this.requestJson<void>(`/api/bank-accounts/${id}`, {
+      method: 'DELETE'
+    }, 'Gagal menghapus rekening donasi');
+
+    await this.load(true);
   }
 
   // --- NEWS & GALLERY ---
