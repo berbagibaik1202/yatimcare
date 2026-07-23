@@ -13,7 +13,7 @@ import {
   Download,
   Award
 } from 'lucide-react';
-import { ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis, Tooltip, Legend, CartesianGrid } from 'recharts';
+import { ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis, Tooltip, Legend, CartesianGrid, LabelList } from 'recharts';
 
 interface TransparencyPortalProps {
   onOpenDonationModal: () => void;
@@ -23,12 +23,13 @@ export const TransparencyPortal: React.FC<TransparencyPortalProps> = ({ onOpenDo
   const financialSummary: FinancialSummary = db.getFinancialSummary();
   const successfulDonations: Donation[] = db.getDonations().filter(d => d.paymentStatus === 'berhasil');
   const approvedExpenses: Expense[] = db.getExpenses().filter(e => e.status === 'dibayarkan' || e.status === 'disetujui');
-  const chartMonths = Array.from({ length: 12 }, (_value, index) => {
-    const date = new Date();
-    date.setDate(1);
-    date.setMonth(date.getMonth() - (11 - index));
-    return date;
-  });
+  const [chartPeriodMonths, setChartPeriodMonths] = React.useState<3 | 6 | 12>(12);
+  const [showOnlySuccessfulDonations, setShowOnlySuccessfulDonations] = React.useState<boolean>(true);
+
+  const donationsForChart: Donation[] = React.useMemo(
+    () => (showOnlySuccessfulDonations ? successfulDonations : db.getDonations()),
+    [showOnlySuccessfulDonations, successfulDonations]
+  );
 
   const monthKeyFormatter = new Intl.DateTimeFormat('en-CA', {
     year: 'numeric',
@@ -39,57 +40,78 @@ export const TransparencyPortal: React.FC<TransparencyPortalProps> = ({ onOpenDo
     year: 'numeric'
   });
 
-  const chartBuckets = chartMonths.map(date => {
-    const key = monthKeyFormatter.format(date);
-    return {
-      key,
-      month: monthLabelFormatter.format(date),
-      Pemasukan: 0,
-      Pengeluaran: 0,
-      Saldo: 0,
-      latestDonationTx: '',
-      latestDonationDate: '',
-      latestExpenseTx: '',
-      latestExpenseDate: ''
-    };
-  });
+  const chartData = React.useMemo(() => {
+    const chartMonths = Array.from({ length: chartPeriodMonths }, (_value, index) => {
+      const date = new Date();
+      date.setDate(1);
+      date.setMonth(date.getMonth() - (chartPeriodMonths - 1 - index));
+      return date;
+    });
 
-  const bucketIndex = new Map(chartBuckets.map((bucket, index) => [bucket.key, index]));
+    const chartBuckets = chartMonths.map(date => {
+      const key = monthKeyFormatter.format(date);
+      return {
+        key,
+        month: monthLabelFormatter.format(date),
+        Pemasukan: 0,
+        Pengeluaran: 0,
+        Saldo: 0,
+        latestDonationTx: '',
+        latestDonationDate: '',
+        latestExpenseTx: '',
+        latestExpenseDate: ''
+      };
+    });
 
-  successfulDonations.forEach(donation => {
-    const donationDate = new Date(donation.donatedAt);
-    const key = monthKeyFormatter.format(donationDate);
-    const bucketIndexValue = bucketIndex.get(key);
-    if (bucketIndexValue !== undefined) {
-      chartBuckets[bucketIndexValue].Pemasukan += donation.amount;
-      if (!chartBuckets[bucketIndexValue].latestDonationDate || donationDate > new Date(chartBuckets[bucketIndexValue].latestDonationDate)) {
-        chartBuckets[bucketIndexValue].latestDonationTx = donation.transactionNumber;
-        chartBuckets[bucketIndexValue].latestDonationDate = donation.donatedAt;
+    const bucketIndex = new Map(chartBuckets.map((bucket, index) => [bucket.key, index]));
+
+    donationsForChart.forEach(donation => {
+      const donationDate = new Date(donation.donatedAt);
+      const key = monthKeyFormatter.format(donationDate);
+      const bucketIndexValue = bucketIndex.get(key);
+      if (bucketIndexValue !== undefined) {
+        chartBuckets[bucketIndexValue].Pemasukan += donation.amount;
+        if (!chartBuckets[bucketIndexValue].latestDonationDate || donationDate > new Date(chartBuckets[bucketIndexValue].latestDonationDate)) {
+          chartBuckets[bucketIndexValue].latestDonationTx = donation.transactionNumber;
+          chartBuckets[bucketIndexValue].latestDonationDate = donation.donatedAt;
+        }
       }
-    }
-  });
+    });
 
-  approvedExpenses.forEach(expense => {
-    const expenseDate = new Date(expense.transactionDate);
-    const key = monthKeyFormatter.format(expenseDate);
-    const bucketIndexValue = bucketIndex.get(key);
-    if (bucketIndexValue !== undefined) {
-      chartBuckets[bucketIndexValue].Pengeluaran += expense.amount;
-      if (!chartBuckets[bucketIndexValue].latestExpenseDate || expenseDate > new Date(chartBuckets[bucketIndexValue].latestExpenseDate)) {
-        chartBuckets[bucketIndexValue].latestExpenseTx = expense.expenseNumber;
-        chartBuckets[bucketIndexValue].latestExpenseDate = expense.transactionDate;
+    approvedExpenses.forEach(expense => {
+      const expenseDate = new Date(expense.transactionDate);
+      const key = monthKeyFormatter.format(expenseDate);
+      const bucketIndexValue = bucketIndex.get(key);
+      if (bucketIndexValue !== undefined) {
+        chartBuckets[bucketIndexValue].Pengeluaran += expense.amount;
+        if (!chartBuckets[bucketIndexValue].latestExpenseDate || expenseDate > new Date(chartBuckets[bucketIndexValue].latestExpenseDate)) {
+          chartBuckets[bucketIndexValue].latestExpenseTx = expense.expenseNumber;
+          chartBuckets[bucketIndexValue].latestExpenseDate = expense.transactionDate;
+        }
       }
-    }
-  });
+    });
 
-  let runningBalance = 0;
-  const chartData = chartBuckets.map(bucket => {
-    runningBalance += bucket.Pemasukan - bucket.Pengeluaran;
-    return {
-      ...bucket,
-      Saldo: runningBalance
-    };
-  });
+    let runningBalance = 0;
+    return chartBuckets.map(bucket => {
+      runningBalance += bucket.Pemasukan - bucket.Pengeluaran;
+      return {
+        ...bucket,
+        Saldo: runningBalance
+      };
+    });
+  }, [approvedExpenses, chartPeriodMonths, donationsForChart]);
+
+  const formatChartValue = (value: number) => {
+    if (!value) {
+      return '';
+    }
+
+    if (Math.abs(value) >= 1000000) {
+      return `Rp ${(value / 1000000).toFixed(1)}jt`;
+    }
+
+    return `Rp ${value.toLocaleString('id-ID')}`;
+  };
 
   const renderChartTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload?.length) {
@@ -204,14 +226,48 @@ export const TransparencyPortal: React.FC<TransparencyPortalProps> = ({ onOpenDo
 
       {/* Financial Trend Chart */}
       <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div>
-            <h3 className="font-sans font-black text-xl text-slate-900">Grafik Arus Kas Pemasukan vs Pengeluaran</h3>
-            <p className="text-xs text-slate-500 mt-0.5">Perbandingan donasi dan pengeluaran 12 bulan terakhir berdasarkan transaksi terbaru yang tersimpan di database.</p>
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <h3 className="font-sans font-black text-xl text-slate-900">Grafik Arus Kas Pemasukan vs Pengeluaran</h3>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Perbandingan donasi dan pengeluaran {chartPeriodMonths} bulan terakhir berdasarkan transaksi terbaru yang tersimpan di database.
+              </p>
+            </div>
+            <span className="text-xs font-bold px-3.5 py-1.5 bg-emerald-100 text-emerald-800 rounded-full border border-emerald-200">
+              Rekonsiliasi Real-Time
+            </span>
           </div>
-          <span className="text-xs font-bold px-3.5 py-1.5 bg-emerald-100 text-emerald-800 rounded-full border border-emerald-200">
-            Rekonsiliasi Real-Time
-          </span>
+
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs font-bold text-slate-600 mr-1">Periode:</span>
+              {[3, 6, 12].map((period) => (
+                <button
+                  key={period}
+                  type="button"
+                  onClick={() => setChartPeriodMonths(period as 3 | 6 | 12)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-colors cursor-pointer ${
+                    chartPeriodMonths === period
+                      ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                      : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
+                  }`}
+                >
+                  {period} Bulan
+                </button>
+              ))}
+            </div>
+
+            <label className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={showOnlySuccessfulDonations}
+                onChange={(e) => setShowOnlySuccessfulDonations(e.target.checked)}
+                className="rounded-md border-slate-300 text-emerald-600 focus:ring-emerald-500"
+              />
+              <span>Hanya donasi berhasil</span>
+            </label>
+          </div>
         </div>
 
         <div className="h-72 w-full pt-4">
@@ -223,13 +279,19 @@ export const TransparencyPortal: React.FC<TransparencyPortalProps> = ({ onOpenDo
                 tickLine={false}
                 axisLine={false}
                 style={{ fontSize: '11px', fill: '#64748b' }}
-                tickFormatter={(val) => `Rp ${(val/1000000).toFixed(0)}Jt`}
+                tickFormatter={(val) => formatChartValue(Number(val))}
               />
               <Tooltip content={renderChartTooltip} />
               <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
-              <Bar dataKey="Pemasukan" fill="#059669" radius={[8, 8, 0, 0]} barSize={24} />
-              <Bar dataKey="Pengeluaran" fill="#94a3b8" radius={[8, 8, 0, 0]} barSize={24} />
-              <Line type="monotone" dataKey="Saldo" stroke="#b45309" strokeWidth={3} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+              <Bar dataKey="Pemasukan" fill="#059669" radius={[8, 8, 0, 0]} barSize={24}>
+                <LabelList dataKey="Pemasukan" position="top" formatter={(value: number) => formatChartValue(Number(value))} />
+              </Bar>
+              <Bar dataKey="Pengeluaran" fill="#94a3b8" radius={[8, 8, 0, 0]} barSize={24}>
+                <LabelList dataKey="Pengeluaran" position="top" formatter={(value: number) => formatChartValue(Number(value))} />
+              </Bar>
+              <Line type="monotone" dataKey="Saldo" stroke="#b45309" strokeWidth={3} dot={{ r: 3 }} activeDot={{ r: 5 }}>
+                <LabelList dataKey="Saldo" position="top" formatter={(value: number) => formatChartValue(Number(value))} />
+              </Line>
             </ComposedChart>
           </ResponsiveContainer>
         </div>
