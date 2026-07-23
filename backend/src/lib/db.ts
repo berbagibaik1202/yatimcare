@@ -1,5 +1,5 @@
 import mysql, { type Pool, type PoolConnection } from 'mysql2/promise';
-import { env } from '../config/env.js';
+import { getDatabaseUrl } from '../config/env.js';
 import { Decimal, Prisma } from '../generated/db.js';
 import { ensureMysqlSchema } from './mysql-schema.js';
 
@@ -791,7 +791,7 @@ class ModelDelegate {
   }
 }
 
-const pool = mysql.createPool(env.DATABASE_URL);
+const pool = mysql.createPool(getDatabaseUrl());
 const prismaClient = new MysqlCompatClient(pool);
 
 export const prisma = prismaClient as AnyRecord;

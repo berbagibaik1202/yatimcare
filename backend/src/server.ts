@@ -1,17 +1,20 @@
-import dotenv from 'dotenv';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const currentDir = path.dirname(fileURLToPath(import.meta.url));
-dotenv.config({ path: path.join(currentDir, '../.env') });
-
 async function main() {
-  const [{ ensureSchema, prisma }, { createApp }, { env }] = await Promise.all([
-    import('./lib/db.js'),
-    import('./app.js'),
-    import('./config/env.js')
-  ]);
-  await ensureSchema();
+  const { env, getDatabaseConnectionInfo } = await import('./config/env.js');
+  const { createApp } = await import('./app.js');
+  const { prisma } = await import('./lib/db.js');
+  const dbInfo = getDatabaseConnectionInfo();
+
+  console.log(
+    `[YatimCare Backend] Database target: host=${dbInfo.host}, port=${dbInfo.port}, user=${dbInfo.user}, database=${dbInfo.database}`
+  );
+
+  if (env.NODE_ENV === 'development' && process.env.AUTO_SCHEMA_BOOTSTRAP === 'true') {
+    const { ensureSchema } = await import('./lib/db.js');
+    await ensureSchema();
+  } else {
+    console.log('[YatimCare Backend] Skipping schema initialization on startup');
+  }
+
   let prismaClient: { $disconnect?: () => Promise<void> } | null = prisma;
   const app = createApp();
 

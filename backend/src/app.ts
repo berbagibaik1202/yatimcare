@@ -36,6 +36,8 @@ function resolveFrontendEntry(): { root: string; index: string } | null {
     process.env.FRONTEND_ROOT,
     path.join(process.cwd(), 'dist'),
     process.cwd(),
+    path.join(process.cwd(), '..', 'dist'),
+    path.join(process.cwd(), '..'),
   ].filter(Boolean) as string[];
 
   for (const candidate of candidates) {
@@ -83,20 +85,18 @@ export function createApp() {
 
   app.use('/api', apiRoutes);
 
-  if (env.NODE_ENV === 'production') {
-    const frontend = resolveFrontendEntry();
+  const frontend = resolveFrontendEntry();
 
-    if (frontend) {
-      app.use(express.static(frontend.root));
-      app.get('*', (req, res, next) => {
-        if (req.path.startsWith('/api')) {
-          next();
-          return;
-        }
+  if (frontend) {
+    app.use(express.static(frontend.root));
+    app.get('*', (req, res, next) => {
+      if (req.path.startsWith('/api')) {
+        next();
+        return;
+      }
 
-        res.sendFile(frontend.index);
-      });
-    }
+      res.sendFile(frontend.index);
+    });
   }
 
   app.use(notFound);

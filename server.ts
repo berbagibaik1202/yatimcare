@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import net from 'net';
 import path from 'path';
 import { createServer as createViteServer } from 'vite';
+import { getDatabaseConnectionInfo } from './backend/src/config/env.ts';
 import apiRoutes from './backend/src/routes/index.ts';
 
 function isPortAvailable(port: number): Promise<boolean> {
@@ -27,6 +28,11 @@ async function resolvePort(preferredPort: number): Promise<number> {
   }
 
   return preferredPort;
+}
+
+function parsePort(value: string | undefined, fallback: number) {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
 }
 
 function resolveFrontendEntry(): { root: string; index: string } | null {
@@ -61,9 +67,10 @@ function resolveFrontendEntry(): { root: string; index: string } | null {
 
 async function startServer() {
   const app = express();
-  const preferredPort = Number(process.env.PORT ?? 3000);
+  const preferredPort = parsePort(process.env.PORT, 3000);
   const host = process.env.HOST ?? '127.0.0.1';
-  const port = await resolvePort(preferredPort);
+  const port = process.env.NODE_ENV === 'production' ? preferredPort : await resolvePort(preferredPort);
+  const dbInfo = getDatabaseConnectionInfo();
 
   app.use(express.json({ limit: '10mb' }));
   app.use('/api', apiRoutes);
@@ -94,6 +101,9 @@ async function startServer() {
   app.listen(port, host, () => {
     const displayHost = host === '127.0.0.1' ? 'localhost' : host;
     console.log(`[YatimCare Server] Running on http://${displayHost}:${port}`);
+    console.log(
+      `[YatimCare Server] Database target: host=${dbInfo.host}, port=${dbInfo.port}, user=${dbInfo.user}, database=${dbInfo.database}`
+    );
   });
 }
 

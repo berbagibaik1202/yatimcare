@@ -99,4 +99,13 @@ writeReleasePackageJson(path.join(rootDir, 'backend', 'package.json'), path.join
 copyIfExists(path.join(rootDir, 'backend', 'package-lock.json'), path.join(backendDir, 'package-lock.json'));
 copyIfExists(path.join(rootDir, 'backend', '.env.example'), path.join(backendDir, '.env.example'));
 
+const backendEnvPath = path.join(rootDir, 'backend', '.env');
+const rootEnvPath = path.join(rootDir, '.env');
+
+if (fs.existsSync(backendEnvPath)) {
+  copyIfExists(backendEnvPath, path.join(backendDir, '.env'));
+} else {
+  copyIfExists(rootEnvPath, path.join(backendDir, '.env'));
+}
+
 console.log(`Release package prepared at ${releaseDir}`);
