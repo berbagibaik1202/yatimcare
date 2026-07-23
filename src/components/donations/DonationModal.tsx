@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { BankAccount, Program, PaymentMethod } from '../../types';
 import { db } from '../../services/dbStore';
-import { Heart, X, CheckCircle2, Copy, Building2, QrCode, Sparkles } from 'lucide-react';
+import { Heart, X, CheckCircle2, Copy, Building2, QrCode, Sparkles, Upload, Image, FileText, Trash2 } from 'lucide-react';
 
 interface DonationModalProps {
   isOpen: boolean;
@@ -35,12 +35,17 @@ export const DonationModal: React.FC<DonationModalProps> = ({
   const [donorMessage, setDonorMessage] = useState<string>('');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('transfer_bank');
   const [selectedBank, setSelectedBank] = useState<string>(paymentAccounts[0]?.accountNumber || '');
+  const [paymentReference, setPaymentReference] = useState<string>('');
+  const [paymentProofUrl, setPaymentProofUrl] = useState<string>('');
+  const [paymentProofName, setPaymentProofName] = useState<string>('');
 
   const [submittedTx, setSubmittedTx] = useState<any>(null);
   const [submittedBankInfo, setSubmittedBankInfo] = useState<BankAccount | null>(null);
   const [copiedAccount, setCopiedAccount] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const paymentProofInputRef = useRef<HTMLInputElement | null>(null);
   const paymentAccountSignature = paymentAccounts.map(account => account.accountNumber).join('|');
+  const programSignature = programs.map(program => program.id).join('|');
 
   useEffect(() => {
     if (!paymentAccounts.length) {
@@ -52,6 +57,40 @@ export const DonationModal: React.FC<DonationModalProps> = ({
       setSelectedBank(paymentAccounts[0].accountNumber);
     }
   }, [paymentAccountSignature, selectedBank]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    setProgramId(selectedProgramId || programs[0]?.id || 'prg-1');
+    setDonationType('santunan');
+    setPresetAmount(100000);
+    setCustomAmount('');
+    setIsAnonymous(false);
+    setIsRecurring(false);
+    setDonorName(currentUser?.name || '');
+    setDonorEmail(currentUser?.email || '');
+    setDonorPhone(currentUser?.phone || '');
+    setDonorMessage('');
+    setPaymentMethod('transfer_bank');
+    setSelectedBank(paymentAccounts[0]?.accountNumber || '');
+    setPaymentReference('');
+    setPaymentProofUrl('');
+    setPaymentProofName('');
+    setSubmittedTx(null);
+    setSubmittedBankInfo(null);
+    setCopiedAccount(false);
+    setIsSubmitting(false);
+  }, [
+    currentUser?.email,
+    currentUser?.name,
+    currentUser?.phone,
+    isOpen,
+    paymentAccountSignature,
+    programSignature,
+    selectedProgramId
+  ]);
 
   if (!isOpen) return null;
 
@@ -88,6 +127,8 @@ export const DonationModal: React.FC<DonationModalProps> = ({
         amount: activeAmount,
         paymentMethod,
         destinationAccount: `${selectedBankInfo.bankName} ${selectedBankInfo.accountNumber} a.n ${selectedBankInfo.accountHolder}`,
+        paymentReference: paymentReference || undefined,
+        paymentProofUrl: paymentProofUrl || undefined,
         isAnonymous,
         donorMessage
       });
@@ -106,6 +147,40 @@ export const DonationModal: React.FC<DonationModalProps> = ({
     navigator.clipboard.writeText(text);
     setCopiedAccount(true);
     setTimeout(() => setCopiedAccount(false), 2000);
+  };
+
+  const handlePaymentProofUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    if (!file.type.startsWith('image/')) {
+      alert('Bukti transfer harus berupa file gambar.');
+      event.target.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        setPaymentProofUrl(reader.result);
+        setPaymentProofName(file.name);
+      }
+    };
+    reader.onerror = () => {
+      alert('Gagal membaca file bukti transfer.');
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const clearPaymentProof = () => {
+    setPaymentProofUrl('');
+    setPaymentProofName('');
+    if (paymentProofInputRef.current) {
+      paymentProofInputRef.current.value = '';
+    }
   };
 
   return (
@@ -178,6 +253,36 @@ export const DonationModal: React.FC<DonationModalProps> = ({
                   </button>
                 </div>
               </div>
+
+              {(submittedTx.paymentReference || submittedTx.paymentProofUrl) && (
+                <div className="pt-3 border-t border-slate-200 space-y-3 text-left">
+                  <span className="text-xs text-slate-500 font-medium">Referensi Pembayaran & Bukti Transfer</span>
+
+                  {submittedTx.paymentReference && (
+                    <div className="p-3.5 bg-white rounded-2xl border border-slate-200">
+                      <div className="flex items-center gap-2 text-xs font-bold text-slate-700 mb-1.5">
+                        <FileText className="w-4 h-4 text-emerald-600" />
+                        <span>Referensi Pembayaran</span>
+                      </div>
+                      <p className="font-mono text-sm font-bold text-slate-900 break-all">{submittedTx.paymentReference}</p>
+                    </div>
+                  )}
+
+                  {submittedTx.paymentProofUrl && (
+                    <div className="p-3.5 bg-white rounded-2xl border border-slate-200">
+                      <div className="flex items-center gap-2 text-xs font-bold text-slate-700 mb-2">
+                        <Image className="w-4 h-4 text-emerald-600" />
+                        <span>Bukti Transfer</span>
+                      </div>
+                      <img
+                        src={submittedTx.paymentProofUrl}
+                        alt="Bukti transfer"
+                        className="w-full max-h-64 object-contain rounded-xl border border-slate-100 bg-slate-50"
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div className="p-3.5 bg-emerald-50 rounded-2xl border border-emerald-200 text-xs text-emerald-800 flex items-center gap-2 font-medium">
                 <Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
@@ -371,6 +476,86 @@ export const DonationModal: React.FC<DonationModalProps> = ({
               <p className="text-[10px] text-slate-500 mt-1.5 leading-relaxed">
                 Rekening ini berasal dari data rekening yayasan dan menjadi tujuan transfer donasi.
               </p>
+            </div>
+
+            {/* Payment Reference & Proof */}
+            <div className="space-y-3 pt-2 border-t border-slate-100">
+              <div className="flex items-center gap-2">
+                <FileText className="w-4 h-4 text-emerald-600" />
+                <label className="block text-xs font-bold text-slate-700">Referensi Pembayaran & Bukti Transfer</label>
+              </div>
+
+              <input
+                type="text"
+                placeholder="Referensi transfer / nomor transaksi bank (opsional)"
+                value={paymentReference}
+                onChange={(e) => setPaymentReference(e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 text-xs font-medium focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+              />
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div className="space-y-2">
+                  <label className="block text-[11px] font-semibold text-slate-600">URL gambar bukti transfer</label>
+                  <input
+                    type="url"
+                    placeholder="https://..."
+                    value={paymentProofUrl.startsWith('data:') ? '' : paymentProofUrl}
+                    onChange={(e) => {
+                      setPaymentProofUrl(e.target.value);
+                      if (e.target.value) {
+                        setPaymentProofName('');
+                      }
+                    }}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 text-xs font-medium focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-[11px] font-semibold text-slate-600">Upload gambar bukti transfer</label>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => paymentProofInputRef.current?.click()}
+                      className="flex-1 px-3.5 py-2.5 rounded-xl border border-dashed border-slate-300 bg-slate-50 text-slate-700 text-xs font-semibold flex items-center justify-center gap-2 hover:bg-slate-100 transition-colors cursor-pointer"
+                    >
+                      <Upload className="w-4 h-4" />
+                      <span>Pilih File</span>
+                    </button>
+                    <input
+                      ref={paymentProofInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handlePaymentProofUpload}
+                      className="hidden"
+                    />
+                    <button
+                      type="button"
+                      onClick={clearPaymentProof}
+                      className="px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-500 text-xs font-semibold hover:bg-slate-50 transition-colors cursor-pointer"
+                      title="Hapus bukti transfer"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {(paymentProofUrl || paymentProofName) && (
+                <div className="p-3 bg-white rounded-2xl border border-slate-200 space-y-2">
+                  <div className="flex items-center gap-2 text-[11px] font-bold text-slate-700">
+                    <Image className="w-4 h-4 text-emerald-600" />
+                    <span>Pratinjau Bukti Transfer</span>
+                  </div>
+                  {paymentProofName && <p className="text-[11px] text-slate-500">{paymentProofName}</p>}
+                  {paymentProofUrl && (
+                    <img
+                      src={paymentProofUrl}
+                      alt="Pratinjau bukti transfer"
+                      className="w-full max-h-48 object-contain rounded-xl border border-slate-100 bg-slate-50"
+                    />
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Submit Action & Cancel */}

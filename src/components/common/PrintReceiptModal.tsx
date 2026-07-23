@@ -1,6 +1,6 @@
 import React from 'react';
 import { Donation, Child } from '../../types';
-import { Printer, Download, X, Heart, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { Printer, Download, X, Heart, ShieldCheck, CheckCircle2, FileText, Image } from 'lucide-react';
 
 interface PrintReceiptModalProps {
   isOpen: boolean;
@@ -110,6 +110,36 @@ export const PrintReceiptModal: React.FC<PrintReceiptModalProps> = ({
                   </p>
                 </div>
               </div>
+
+              {(donation.paymentReference || donation.paymentProofUrl) && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
+                    <FileText className="w-4 h-4 text-emerald-600" />
+                    <span>Referensi Pembayaran & Bukti Transfer</span>
+                  </div>
+
+                  {donation.paymentReference && (
+                    <div className="p-3 bg-slate-50 rounded-xl text-xs">
+                      <span className="text-slate-500 font-medium">Referensi Pembayaran:</span>
+                      <p className="font-mono font-bold text-slate-900 mt-1 break-all">{donation.paymentReference}</p>
+                    </div>
+                  )}
+
+                  {donation.paymentProofUrl && (
+                    <div className="p-3 bg-slate-50 rounded-xl text-xs">
+                      <div className="flex items-center gap-2 text-slate-500 font-medium mb-2">
+                        <Image className="w-4 h-4 text-emerald-600" />
+                        <span>Bukti Transfer</span>
+                      </div>
+                      <img
+                        src={donation.paymentProofUrl}
+                        alt="Bukti transfer"
+                        className="w-full max-h-72 object-contain rounded-xl border border-slate-200 bg-white"
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Total Amount Display Box */}
               <div className="p-6 bg-gradient-to-r from-emerald-800 to-teal-900 text-white rounded-2xl shadow-md flex items-center justify-between">

@@ -380,7 +380,7 @@ model Donation {
   paymentMethod    PaymentMethod
   destinationAccount String       @db.VarChar(100)
   paymentReference String?        @db.VarChar(120)
-  paymentProofUrl  String?        @db.VarChar(255)
+  paymentProofUrl  String?        @db.LongText
   paymentStatus    DonationStatus @default(menunggu_verifikasi)
   isAnonymous      Boolean        @default(false)
   donorMessage     String?        @db.Text

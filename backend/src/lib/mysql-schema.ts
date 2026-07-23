@@ -326,6 +326,7 @@ export async function ensureMysqlSchema(pool: Pool) {
   if ((row?.countValue ?? 0) > 0) {
     await ensureColumnType(pool, 'Program', 'thumbnail', 'LONGTEXT', false);
     await ensureColumnType(pool, 'NewsItem', 'coverImage', 'LONGTEXT', true);
+    await ensureColumnType(pool, 'Donation', 'paymentProofUrl', 'LONGTEXT', true);
     return;
   }
 
