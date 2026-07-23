@@ -11,6 +11,7 @@ import { AdminDashboard } from './components/admin/AdminDashboard';
 import { DonationModal } from './components/donations/DonationModal';
 import { LoginModal } from './components/auth/LoginModal';
 import { db } from './services/dbStore';
+import { ImageWithFallback } from './components/common/ImageWithFallback';
 import { Heart, Sparkles, MapPin, HandHeart } from 'lucide-react';
 
 export default function App() {
@@ -169,7 +170,7 @@ export default function App() {
                   <div key={prog.id} className="bg-white rounded-3xl border border-slate-200/80 overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col justify-between group">
                     <div>
                       <div className="relative h-48 overflow-hidden">
-                        <img src={prog.thumbnail} alt={prog.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                        <ImageWithFallback src={prog.thumbnail} alt={prog.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                         <span className="absolute top-3 left-3 px-3 py-1 rounded-full bg-slate-900/80 backdrop-blur-md text-emerald-300 border border-white/10 text-[10px] font-bold uppercase tracking-wider">
                           {prog.category}
                         </span>

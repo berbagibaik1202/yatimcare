@@ -21,6 +21,7 @@ import {
 import { Program, Child, NewsItem, FinancialSummary } from '../../types';
 import { db } from '../../services/dbStore';
 import { CountUpNumber } from '../common/CountUpNumber';
+import { ImageWithFallback } from '../common/ImageWithFallback';
 
 interface PublicLandingProps {
   onOpenDonationModal: (programId?: string) => void;
@@ -262,7 +263,7 @@ export const PublicLanding: React.FC<PublicLandingProps> = ({
               >
                 <div>
                   <div className="relative h-48 overflow-hidden">
-                    <img
+                    <ImageWithFallback
                       src={prog.thumbnail}
                       alt={prog.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"

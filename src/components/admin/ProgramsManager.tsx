@@ -18,6 +18,7 @@ import {
   CheckCircle2,
   FileText
 } from 'lucide-react';
+import { ImageWithFallback } from '../common/ImageWithFallback';
 
 interface ProgramsManagerProps {
   onRefreshData: () => void;
@@ -346,7 +347,7 @@ export const ProgramsManager: React.FC<ProgramsManagerProps> = ({ onRefreshData 
         {filteredPrograms.map(({ program, totalUsage, donationCount, expenseCount, aidCount }) => (
           <div key={program.id} className="bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden">
             <div className="relative h-48 bg-slate-100">
-              <img
+              <ImageWithFallback
                 src={program.thumbnail}
                 alt={program.title}
                 className="w-full h-full object-cover"
