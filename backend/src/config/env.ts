@@ -59,6 +59,20 @@ function loadEnvFile(filePath: string, override = false) {
   }
 }
 
+function normalizeRuntimeEnvKeys() {
+  for (const [key, value] of Object.entries(process.env)) {
+    if (value === undefined) {
+      continue;
+    }
+
+    const normalizedKey = key.toUpperCase();
+    if (normalizedKey !== key && process.env[normalizedKey] === undefined) {
+      process.env[normalizedKey] = value;
+    }
+  }
+}
+
+normalizeRuntimeEnvKeys();
 loadEnvFile(cwdEnvPath, false);
 if (path.resolve(cwdEnvPath) !== path.resolve(backendEnvPath)) {
   loadEnvFile(backendEnvPath, false);
