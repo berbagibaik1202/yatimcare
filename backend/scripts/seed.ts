@@ -1026,10 +1026,10 @@ async function main() {
     where: { status: 'selesai' }
   });
 
-  const successfulByProgram = successfulDonations.reduce<Record<string, { amount: Prisma.Decimal; count: number }>>(
+  const successfulByProgram = successfulDonations.reduce<Record<string, { amount: number; count: number }>>(
     (acc, donation) => {
-      const current = acc[donation.programId] ?? { amount: d(0), count: 0 };
-      current.amount = current.amount.add(donation.amount);
+      const current = acc[donation.programId] ?? { amount: 0, count: 0 };
+      current.amount += Number(donation.amount);
       current.count += 1;
       acc[donation.programId] = current;
       return acc;
@@ -1037,39 +1037,39 @@ async function main() {
     {}
   );
 
-  const distributedByProgram = [...expenseItems, ...aidItems].reduce<Record<string, Prisma.Decimal>>((acc, item) => {
+  const distributedByProgram = [...expenseItems, ...aidItems].reduce<Record<string, number>>((acc, item) => {
     if (!item.programId) {
       return acc;
     }
 
-    const current = acc[item.programId] ?? d(0);
-    acc[item.programId] = current.add(item.amount);
+    const current = acc[item.programId] ?? 0;
+    acc[item.programId] = current + Number(item.amount);
     return acc;
   }, {});
 
   for (const [programId, stats] of Object.entries(successfulByProgram) as Array<
-    [string, { amount: Prisma.Decimal; count: number }]
+    [string, { amount: number; count: number }]
   >) {
     await prisma.program.update({
       where: { id: programId },
       data: {
-        collectedAmount: stats.amount,
+        collectedAmount: d(stats.amount),
         donorCount: stats.count,
-        distributedAmount: distributedByProgram[programId] ?? d(0)
+        distributedAmount: d(distributedByProgram[programId] ?? 0)
       }
     });
   }
 
-  const aidByChild = aidItems.reduce<Record<string, Prisma.Decimal>>((acc, item) => {
-    const current = acc[item.childId] ?? d(0);
-    acc[item.childId] = current.add(item.amount);
+  const aidByChild = aidItems.reduce<Record<string, number>>((acc, item) => {
+    const current = acc[item.childId] ?? 0;
+    acc[item.childId] = current + Number(item.amount);
     return acc;
   }, {});
 
   for (const [childId, amount] of Object.entries(aidByChild)) {
     await prisma.child.update({
       where: { id: childId },
-      data: { totalAidReceived: amount }
+      data: { totalAidReceived: d(amount) }
     });
   }
 
