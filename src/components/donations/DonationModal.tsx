@@ -45,6 +45,7 @@ export const DonationModal: React.FC<DonationModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [showValidationPopup, setShowValidationPopup] = useState<boolean>(false);
   const paymentProofInputRef = useRef<HTMLInputElement | null>(null);
+  const refreshAfterSubmitTimerRef = useRef<number | null>(null);
   const paymentAccountSignature = paymentAccounts.map(account => account.accountNumber).join('|');
   const programSignature = programs.map(program => program.id).join('|');
 
@@ -84,6 +85,10 @@ export const DonationModal: React.FC<DonationModalProps> = ({
     setCopiedAccount(false);
     setIsSubmitting(false);
     setShowValidationPopup(false);
+    if (refreshAfterSubmitTimerRef.current) {
+      window.clearTimeout(refreshAfterSubmitTimerRef.current);
+      refreshAfterSubmitTimerRef.current = null;
+    }
   }, [
     currentUser?.email,
     currentUser?.name,
@@ -150,7 +155,13 @@ export const DonationModal: React.FC<DonationModalProps> = ({
 
       setSubmittedTx(newDonation);
       setSubmittedBankInfo(selectedBankInfo);
-      onSuccess();
+      if (refreshAfterSubmitTimerRef.current) {
+        window.clearTimeout(refreshAfterSubmitTimerRef.current);
+      }
+      refreshAfterSubmitTimerRef.current = window.setTimeout(() => {
+        onSuccess();
+        refreshAfterSubmitTimerRef.current = null;
+      }, 5000);
     } catch (error) {
       alert(error instanceof Error ? error.message : 'Gagal mengirim donasi');
     } finally {
