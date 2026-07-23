@@ -65,7 +65,18 @@ function resolveFrontendEntry(): { root: string; index: string } | null {
 export function createApp() {
   const app = express();
 
-  app.use(helmet());
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          imgSrc: ["'self'", 'data:', 'blob:', 'https:'],
+          objectSrc: ["'none'"],
+          scriptSrcAttr: ["'none'"]
+        }
+      }
+    })
+  );
   app.use(
     cors({
       origin: getCorsOriginConfig(),
