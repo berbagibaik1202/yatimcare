@@ -316,23 +316,12 @@ class DatabaseStore {
 
   public getDonationBankAccounts(): BankAccount[] {
     const activeBankAccounts = this.bankAccounts.filter(account => account.isActive);
-
-    if (activeBankAccounts.length > 0) {
-      return activeBankAccounts.map(account => ({
-        ...account,
-        branch: undefined,
-        isPublic: true,
-        logoUrl: undefined
-      }));
-    }
-
     const primaryAccount = this.getDonationBankInfo();
-    if (!primaryAccount) {
-      return [];
-    }
 
-    return [
-      {
+    const accounts: BankAccount[] = [];
+
+    if (primaryAccount) {
+      accounts.push({
         id: 'system-donation-bank',
         bankName: primaryAccount.bankName,
         accountNumber: primaryAccount.accountNumber,
@@ -342,8 +331,23 @@ class DatabaseStore {
         isActive: true,
         isPublic: true,
         logoUrl: undefined
+      });
+    }
+
+    for (const account of activeBankAccounts) {
+      if (accounts.some((item) => item.accountNumber === account.accountNumber)) {
+        continue;
       }
-    ];
+
+      accounts.push({
+        ...account,
+        branch: undefined,
+        isPublic: true,
+        logoUrl: undefined
+      });
+    }
+
+    return accounts;
   }
 
   public async updateSystemSetting(

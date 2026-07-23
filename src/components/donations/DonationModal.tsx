@@ -20,16 +20,7 @@ export const DonationModal: React.FC<DonationModalProps> = ({
 }) => {
   const currentUser = db.getCurrentUser();
   const bankAccounts = db.getDonationBankAccounts();
-  const fallbackBank: BankAccount = {
-    id: 'fallback-donation-bank',
-    bankName: 'BSI',
-    accountNumber: '7123456789',
-    accountHolder: 'Yayasan YatimCare',
-    accountType: 'Tabungan',
-    isActive: true,
-    isPublic: true,
-  };
-  const paymentAccounts = bankAccounts.length > 0 ? bankAccounts : [fallbackBank];
+  const paymentAccounts = bankAccounts;
 
   const [programId, setProgramId] = useState<string>(selectedProgramId || programs[0]?.id || 'prg-1');
   const [donationType, setDonationType] = useState<'santunan' | 'pendidikan' | 'sembako' | 'zakat' | 'infak' | 'sedekah'>('santunan');
@@ -43,10 +34,10 @@ export const DonationModal: React.FC<DonationModalProps> = ({
   const [donorPhone, setDonorPhone] = useState<string>(currentUser?.phone || '');
   const [donorMessage, setDonorMessage] = useState<string>('');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('transfer_bank');
-  const [selectedBank, setSelectedBank] = useState<string>(paymentAccounts[0]?.accountNumber || fallbackBank.accountNumber);
+  const [selectedBank, setSelectedBank] = useState<string>(paymentAccounts[0]?.accountNumber || '');
 
   const [submittedTx, setSubmittedTx] = useState<any>(null);
-  const [submittedBankInfo, setSubmittedBankInfo] = useState<typeof fallbackBank | null>(null);
+  const [submittedBankInfo, setSubmittedBankInfo] = useState<BankAccount | null>(null);
   const [copiedAccount, setCopiedAccount] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const paymentAccountSignature = paymentAccounts.map(account => account.accountNumber).join('|');
@@ -66,7 +57,7 @@ export const DonationModal: React.FC<DonationModalProps> = ({
 
   const activeAmount = customAmount ? parseInt(customAmount, 10) || 0 : presetAmount;
   const currentProgram = programs.find(p => p.id === programId) || programs[0];
-  const selectedBankInfo = paymentAccounts.find(account => account.accountNumber === selectedBank) || paymentAccounts[0] || fallbackBank;
+  const selectedBankInfo = paymentAccounts.find(account => account.accountNumber === selectedBank) || paymentAccounts[0] || null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,6 +68,11 @@ export const DonationModal: React.FC<DonationModalProps> = ({
 
     if (!currentProgram) {
       alert('Program donasi belum tersedia.');
+      return;
+    }
+
+    if (!selectedBankInfo) {
+      alert('Rekening donasi belum diatur oleh admin.');
       return;
     }
 
@@ -164,17 +160,17 @@ export const DonationModal: React.FC<DonationModalProps> = ({
                 <div className="mt-2 flex items-center justify-between p-3.5 bg-white rounded-2xl border border-slate-200 shadow-xs">
                   <div>
                     <p className="font-bold text-sm text-slate-900">
-                      {submittedBankInfo?.bankName || selectedBankInfo.bankName}
+                      {submittedBankInfo?.bankName || selectedBankInfo?.bankName}
                     </p>
                     <p className="font-mono text-base font-bold text-emerald-700">
-                      {submittedBankInfo?.accountNumber || selectedBankInfo.accountNumber}
+                      {submittedBankInfo?.accountNumber || selectedBankInfo?.accountNumber}
                     </p>
                     <p className="text-xs text-slate-500">
-                      a.n {submittedBankInfo?.accountHolder || selectedBankInfo.accountHolder}
+                      a.n {submittedBankInfo?.accountHolder || selectedBankInfo?.accountHolder}
                     </p>
                   </div>
                   <button
-                    onClick={() => copyToClipboard(submittedBankInfo?.accountNumber || selectedBankInfo.accountNumber)}
+                    onClick={() => selectedBankInfo && copyToClipboard(submittedBankInfo?.accountNumber || selectedBankInfo.accountNumber)}
                     className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
                   >
                     <Copy className="w-3.5 h-3.5" />
@@ -363,6 +359,7 @@ export const DonationModal: React.FC<DonationModalProps> = ({
               <select
                 value={selectedBank}
                 onChange={(e) => setSelectedBank(e.target.value)}
+                disabled={paymentAccounts.length === 0}
                 className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 text-xs font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
               >
                 {paymentAccounts.map((account) => (
