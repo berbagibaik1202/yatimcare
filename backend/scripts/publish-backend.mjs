@@ -4,7 +4,7 @@ import { build } from 'esbuild';
 
 const backendRoot = process.cwd();
 const distDir = path.join(backendRoot, 'dist');
-const runtimeOutputs = ['app.js', 'server.js', 'server.cjs', 'config', 'generated', 'lib', 'middleware', 'modules', 'routes'];
+const runtimeOutputs = ['app.js', 'server.js', 'server.cjs', 'seed.cjs', 'config', 'generated', 'lib', 'middleware', 'modules', 'routes'];
 
 if (!fs.existsSync(distDir)) {
   throw new Error(`Backend dist directory not found: ${distDir}`);
@@ -17,6 +17,19 @@ for (const outputName of runtimeOutputs) {
 await build({
   entryPoints: [path.join(distDir, 'server.js')],
   outfile: path.join(backendRoot, 'server.cjs'),
+  bundle: true,
+  platform: 'node',
+  format: 'cjs',
+  target: 'node22',
+  define: {
+    'process.env.NODE_ENV': '"production"'
+  },
+  logLevel: 'info'
+});
+
+await build({
+  entryPoints: [path.join(backendRoot, 'scripts', 'seed.ts')],
+  outfile: path.join(backendRoot, 'seed.cjs'),
   bundle: true,
   platform: 'node',
   format: 'cjs',

@@ -1,4 +1,4 @@
-import 'dotenv/config';
+import '../src/config/env.js';
 import { Prisma } from '../src/generated/db.js';
 import { ensureSchema, prisma } from '../src/lib/db.js';
 import { hashPassword } from '../src/lib/auth.js';
@@ -6,6 +6,16 @@ import { hashPassword } from '../src/lib/auth.js';
 const d = (value: number) => new Prisma.Decimal(value);
 const dt = (value: string) => new Date(value);
 const demoPasswordHash = hashPassword('YatimCare123!');
+const seedMarkerKey = 'seed_version';
+const seedVersion = '1';
+
+async function isSeeded() {
+  const marker = await prisma.systemSetting.findUnique({
+    where: { key: seedMarkerKey }
+  });
+
+  return Boolean(marker);
+}
 
 async function clearDatabase() {
   await prisma.notification.deleteMany();
@@ -30,6 +40,14 @@ async function clearDatabase() {
 async function main() {
   console.log('Seeding YatimCare database...');
   await ensureSchema();
+
+  const alreadySeeded = await isSeeded();
+  const forceSeed = process.env.FORCE_SEED === 'true';
+
+  if (alreadySeeded && !forceSeed) {
+    console.log('Seed skipped: database already initialized.');
+    return;
+  }
 
   await clearDatabase();
 
@@ -987,6 +1005,11 @@ async function main() {
         key: 'contact_phone',
         value: JSON.stringify('0812-3456-7890'),
         description: 'Nomor kontak utama yayasan'
+      },
+      {
+        key: seedMarkerKey,
+        value: JSON.stringify(seedVersion),
+        description: 'Marker seed otomatis'
       }
     ]
   });

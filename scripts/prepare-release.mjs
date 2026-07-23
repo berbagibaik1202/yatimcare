@@ -61,7 +61,7 @@ function writeReleasePackageJson(sourcePackagePath, targetPackagePath) {
 }
 
 function copyBackendRuntime(sourceDir, targetDir) {
-  const allowedNames = new Set(['server.cjs', 'server.js', 'schema']);
+  const allowedNames = new Set(['server.cjs', 'server.js', 'seed.cjs', 'schema']);
 
   copyDirContents(sourceDir, targetDir, entry => {
     if (entry.name === 'package-lock.json') {

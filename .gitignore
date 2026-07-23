@@ -5,6 +5,8 @@ release/
 backend/app.js
 backend/server.js
 backend/server.cjs
+backend/seed.cjs
+backend/scripts/seed.js
 backend/config/
 backend/generated/
 backend/lib/
@@ -19,4 +21,5 @@ coverage/
 *.log
 .env*
 !.env.example
+!.env.docker.example
 !backend/.env.example
