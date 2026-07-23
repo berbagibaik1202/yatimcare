@@ -150,8 +150,10 @@ function parseField(line: string): ColumnDef | null {
   const nullable = optionalMark === '?';
   const sqlType = parseSqlType(rawType, attrs);
   const defaultToken = attrs.match(/@default\(([^)]+)\)/)?.[1];
-  const defaultSql = parseDefaultToken(defaultToken, sqlType);
   const onUpdateCurrentTimestamp = /@updatedAt\b/.test(attrs) && rawType === 'DateTime';
+  const defaultSql = onUpdateCurrentTimestamp
+    ? 'DEFAULT CURRENT_TIMESTAMP'
+    : parseDefaultToken(defaultToken, sqlType);
 
   return {
     name,
