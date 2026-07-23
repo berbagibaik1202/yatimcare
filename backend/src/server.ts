@@ -8,7 +8,7 @@ async function main() {
     `[YatimCare Backend] Database target: host=${dbInfo.host}, port=${dbInfo.port}, user=${dbInfo.user}, database=${dbInfo.database}`
   );
 
-  if (env.NODE_ENV === 'development' && process.env.AUTO_SCHEMA_BOOTSTRAP === 'true') {
+  if (process.env.AUTO_SCHEMA_BOOTSTRAP === 'true') {
     const { ensureSchema } = await import('./lib/db.js');
     await ensureSchema();
   } else {
