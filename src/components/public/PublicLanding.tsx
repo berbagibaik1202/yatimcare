@@ -37,7 +37,7 @@ export const PublicLanding: React.FC<PublicLandingProps> = ({
   const programs: Program[] = db.getPrograms();
   const activeChildren: Child[] = db.getChildren().filter(c => c.status === 'aktif');
   const newsList: NewsItem[] = db.getNews();
-  const bankAccounts = db.getBankAccounts();
+  const officialBank = db.getDonationBankInfo();
 
   return (
     <div className="space-y-12 pb-16 pt-4">
@@ -389,14 +389,32 @@ export const PublicLanding: React.FC<PublicLandingProps> = ({
               Semua transaksi yang dikirimkan ke rekening yayasan akan diterbitkan bukti kuitansi elektronik resmi setelah diverifikasi oleh Bendahara.
             </p>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-              {bankAccounts.map(b => (
-                <div key={b.id} className="p-4 bg-white/10 backdrop-blur-md rounded-2xl border border-white/10">
-                  <p className="text-[11px] text-amber-300 font-bold uppercase tracking-wider">{b.bankName}</p>
-                  <p className="font-mono font-bold text-base text-white tracking-wider mt-0.5">{b.accountNumber}</p>
-                  <p className="text-[10px] text-slate-300">a.n {b.accountHolder}</p>
+            <div className="pt-2">
+              <div className="p-5 bg-white/10 backdrop-blur-md rounded-3xl border border-white/10 max-w-xl">
+                <div className="flex items-center justify-between gap-3 mb-3">
+                  <p className="text-[11px] text-amber-300 font-bold uppercase tracking-wider">Rekening Resmi dari Pengaturan Admin</p>
+                  <span className="text-[10px] px-2 py-1 rounded-full bg-emerald-400/15 text-emerald-200 border border-emerald-400/20 font-semibold">
+                    Tersimpan di DB
+                  </span>
                 </div>
-              ))}
+
+                {officialBank ? (
+                  <>
+                    <p className="font-bold text-lg text-white">{officialBank.bankName}</p>
+                    <p className="font-mono font-black text-2xl text-amber-300 tracking-wider mt-1">{officialBank.accountNumber}</p>
+                    <p className="text-xs text-slate-300 mt-1">a.n {officialBank.accountHolder}</p>
+                    {officialBank.accountType && (
+                      <p className="text-[10px] text-slate-400 mt-2 uppercase tracking-wider">
+                        {officialBank.accountType}
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-xs text-slate-300 leading-relaxed">
+                    Rekening resmi belum diatur di admin settings.
+                  </p>
+                )}
+              </div>
             </div>
           </div>
 

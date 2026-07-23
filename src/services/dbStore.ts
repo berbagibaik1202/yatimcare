@@ -284,16 +284,6 @@ class DatabaseStore {
   }
 
   public getDonationBankInfo(): { bankName: string; accountNumber: string; accountHolder: string; accountType?: string } | undefined {
-    const firstActiveBank = this.bankAccounts.find(account => account.isActive);
-    if (firstActiveBank) {
-      return {
-        bankName: firstActiveBank.bankName,
-        accountNumber: firstActiveBank.accountNumber,
-        accountHolder: firstActiveBank.accountHolder,
-        accountType: firstActiveBank.accountType
-      };
-    }
-
     const bankName = this.getSystemSettingValue('donation_bank_name');
     const accountNumber = this.getSystemSettingValue('donation_bank_number');
     const accountHolder = this.getSystemSettingValue('donation_bank_holder');
@@ -308,6 +298,16 @@ class DatabaseStore {
         accountNumber: accountNumber.trim(),
         accountHolder: accountHolder.trim(),
         accountType: 'Tabungan'
+      };
+    }
+
+    const firstActiveBank = this.bankAccounts.find(account => account.isActive);
+    if (firstActiveBank) {
+      return {
+        bankName: firstActiveBank.bankName,
+        accountNumber: firstActiveBank.accountNumber,
+        accountHolder: firstActiveBank.accountHolder,
+        accountType: firstActiveBank.accountType
       };
     }
 
