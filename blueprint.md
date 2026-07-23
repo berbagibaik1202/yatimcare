@@ -142,3 +142,14 @@ backend/
 ## Catatan Pengembangan
 
 Blueprint ini sudah diselaraskan ke MySQL dan siap dijadikan dasar implementasi backend. Langkah berikutnya adalah melengkapi validation rules, auth flow, seed data, migration, dan OpenAPI specification.
+
+## Catatan Build Container di VPS
+
+- Build dan jalankan container dengan `docker compose up -d --build`.
+- File env yang dipakai untuk container adalah `.env.docker`.
+- Service `db` memakai image MySQL dan akan otomatis membuat database serta user dari nilai `MYSQL_DATABASE`, `MYSQL_USER`, `MYSQL_PASSWORD`, dan `MYSQL_ROOT_PASSWORD` saat volume masih kosong.
+- Service `seed` akan dijalankan sekali setelah database sehat, lalu mengisi data awal aplikasi.
+- Service `app` baru start setelah `seed` selesai sukses.
+- Backend melayani frontend pada port `4000`, jadi akses publik cukup diarahkan ke service `app`.
+- Jika ingin mengulang proses first run dari awal, hentikan stack lalu hapus volume database dengan `docker compose down -v`, kemudian build ulang.
+- Jika volume MySQL sudah pernah terbentuk, perubahan pada `MYSQL_*` tidak akan diterapkan ulang sampai volume dihapus.
