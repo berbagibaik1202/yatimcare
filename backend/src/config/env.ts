@@ -47,8 +47,14 @@ function loadEnvFile(filePath: string, override = false) {
   const parsed = parseEnvFile(filePath);
 
   for (const [key, value] of Object.entries(parsed)) {
+    const normalizedKey = key.toUpperCase();
+
     if (override || process.env[key] === undefined) {
       process.env[key] = value;
+    }
+
+    if (normalizedKey !== key && (override || process.env[normalizedKey] === undefined)) {
+      process.env[normalizedKey] = value;
     }
   }
 }
