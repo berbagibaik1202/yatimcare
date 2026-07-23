@@ -43,6 +43,7 @@ export const DonationModal: React.FC<DonationModalProps> = ({
   const [submittedBankInfo, setSubmittedBankInfo] = useState<BankAccount | null>(null);
   const [copiedAccount, setCopiedAccount] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [showValidationPopup, setShowValidationPopup] = useState<boolean>(false);
   const paymentProofInputRef = useRef<HTMLInputElement | null>(null);
   const paymentAccountSignature = paymentAccounts.map(account => account.accountNumber).join('|');
   const programSignature = programs.map(program => program.id).join('|');
@@ -82,6 +83,7 @@ export const DonationModal: React.FC<DonationModalProps> = ({
     setSubmittedBankInfo(null);
     setCopiedAccount(false);
     setIsSubmitting(false);
+    setShowValidationPopup(false);
   }, [
     currentUser?.email,
     currentUser?.name,
@@ -91,6 +93,19 @@ export const DonationModal: React.FC<DonationModalProps> = ({
     programSignature,
     selectedProgramId
   ]);
+
+  useEffect(() => {
+    if (!submittedTx) {
+      return;
+    }
+
+    setShowValidationPopup(true);
+    const timer = window.setTimeout(() => {
+      setShowValidationPopup(false);
+    }, 4500);
+
+    return () => window.clearTimeout(timer);
+  }, [submittedTx]);
 
   if (!isOpen) return null;
 
@@ -185,6 +200,37 @@ export const DonationModal: React.FC<DonationModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 overflow-y-auto">
+      {showValidationPopup && submittedTx && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/55 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md rounded-3xl border border-emerald-200 bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="flex items-start gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                <CheckCircle2 className="w-8 h-8" />
+              </div>
+              <div className="space-y-2">
+                <h4 className="text-xl font-serif font-bold text-slate-900">Terima kasih atas donasinya</h4>
+                <p className="text-sm text-slate-600 leading-relaxed">
+                  Status donasi sedang kami validasi. Tim admin akan memeriksa pembayaran Anda sebelum dicatat ke buku kas.
+                </p>
+                <p className="text-xs font-semibold text-emerald-700">
+                  Nomor transaksi: <span className="font-mono">{submittedTx.transactionNumber}</span>
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-5 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowValidationPopup(false)}
+                className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-colors cursor-pointer"
+              >
+                Mengerti
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="bg-white text-slate-900 rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl border border-slate-200 relative my-8 animate-in zoom-in-95 duration-200">
         
         {/* Header */}
