@@ -391,12 +391,7 @@ export const PublicLanding: React.FC<PublicLandingProps> = ({
 
             <div className="pt-2">
               <div className="p-5 bg-white/10 backdrop-blur-md rounded-3xl border border-white/10 max-w-xl">
-                <div className="flex items-center justify-between gap-3 mb-3">
-                  <p className="text-[11px] text-amber-300 font-bold uppercase tracking-wider">Rekening Resmi dari Pengaturan Admin</p>
-                  <span className="text-[10px] px-2 py-1 rounded-full bg-emerald-400/15 text-emerald-200 border border-emerald-400/20 font-semibold">
-                    Tersimpan di DB
-                  </span>
-                </div>
+                <p className="text-[11px] text-amber-300 font-bold uppercase tracking-wider mb-3">Rekening Resmi dari Pengaturan Admin</p>
 
                 {officialBank ? (
                   <>
