@@ -365,18 +365,30 @@ function normalizeJsonValue(value: unknown) {
   }
 
   if (value instanceof Date) {
-    return value.toISOString();
+    return JSON.stringify(value.toISOString());
   }
 
   if (value instanceof Decimal) {
-    return value.toString();
+    return JSON.stringify(value.toString());
   }
 
   if (Array.isArray(value) || isPlainObject(value)) {
     return JSON.stringify(value);
   }
 
-  return value;
+  if (typeof value === 'string') {
+    try {
+      return JSON.stringify(JSON.parse(value));
+    } catch {
+      return JSON.stringify(value);
+    }
+  }
+
+  if (typeof value === 'number' || typeof value === 'boolean') {
+    return JSON.stringify(value);
+  }
+
+  return JSON.stringify(value);
 }
 
 function parseJsonValue(value: unknown) {
