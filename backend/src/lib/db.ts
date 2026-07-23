@@ -99,6 +99,7 @@ const MODEL_META: Record<string, ModelMeta> = {
   survey: {
     table: 'Survey',
     primaryKey: 'id',
+    jsonFields: ['photos'],
     relations: {
       child: { kind: 'one', model: 'child', sourceKey: 'childId', foreignKey: 'id' },
       officer: { kind: 'one', model: 'user', sourceKey: 'officerId', foreignKey: 'id' }
