@@ -277,6 +277,41 @@ function buildCreateTableStatement(table: TableDef) {
   return `CREATE TABLE IF NOT EXISTS \`${table.name}\` (\n  ${constraints.join(',\n  ')}\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`;
 }
 
+async function ensureColumnType(
+  pool: Pool,
+  tableName: string,
+  columnName: string,
+  desiredSqlType: string,
+  nullable: boolean
+) {
+  const [rows] = await pool.query(
+    `SELECT DATA_TYPE AS dataType, IS_NULLABLE AS isNullable
+     FROM information_schema.columns
+     WHERE table_schema = DATABASE()
+       AND table_name = ?
+       AND column_name = ?`,
+    [tableName, columnName]
+  );
+
+  const row = Array.isArray(rows) ? rows[0] as { dataType?: string; isNullable?: string } | undefined : undefined;
+  if (!row) {
+    return;
+  }
+
+  const currentType = String(row.dataType ?? '').toLowerCase();
+  const expectedType = desiredSqlType.toLowerCase();
+  const currentNullable = String(row.isNullable ?? '').toUpperCase() === 'YES';
+
+  if (currentType === expectedType && currentNullable === nullable) {
+    return;
+  }
+
+  const nullSql = nullable ? 'NULL' : 'NOT NULL';
+  await pool.query(
+    `ALTER TABLE \`${tableName}\` MODIFY COLUMN \`${columnName}\` ${desiredSqlType} ${nullSql}`
+  );
+}
+
 export async function ensureMysqlSchema(pool: Pool) {
   const schema = readSchemaSource();
   parseEnums(schema);
@@ -289,6 +324,8 @@ export async function ensureMysqlSchema(pool: Pool) {
 
   const row = Array.isArray(rows) ? rows[0] as { countValue?: number } | undefined : undefined;
   if ((row?.countValue ?? 0) > 0) {
+    await ensureColumnType(pool, 'Program', 'thumbnail', 'LONGTEXT', false);
+    await ensureColumnType(pool, 'NewsItem', 'coverImage', 'LONGTEXT', true);
     return;
   }
 

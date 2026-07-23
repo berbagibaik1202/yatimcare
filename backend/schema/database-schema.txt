@@ -351,7 +351,7 @@ model Program {
   distributedAmount Decimal        @default(0) @db.Decimal(18, 2)
   startDate         DateTime
   endDate           DateTime
-  thumbnail         String         @db.VarChar(255)
+  thumbnail         String         @db.LongText
   status            ProgramStatus  @default(draft)
   isFeatured        Boolean        @default(false)
   donorCount        Int            @default(0)
@@ -516,7 +516,7 @@ model NewsItem {
   slug          String    @unique @db.VarChar(220)
   summary       String    @db.Text
   content       String    @db.LongText
-  coverImage    String?   @db.VarChar(255)
+  coverImage    String?   @db.LongText
   publishedAt   DateTime?
   isPublished   Boolean   @default(false)
   createdById   String?   @db.VarChar(25)
