@@ -13,7 +13,7 @@ import {
   Download,
   Award
 } from 'lucide-react';
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, CartesianGrid } from 'recharts';
+import { ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis, Tooltip, Legend, CartesianGrid } from 'recharts';
 
 interface TransparencyPortalProps {
   onOpenDonationModal: () => void;
@@ -23,10 +23,10 @@ export const TransparencyPortal: React.FC<TransparencyPortalProps> = ({ onOpenDo
   const financialSummary: FinancialSummary = db.getFinancialSummary();
   const successfulDonations: Donation[] = db.getDonations().filter(d => d.paymentStatus === 'berhasil');
   const approvedExpenses: Expense[] = db.getExpenses().filter(e => e.status === 'dibayarkan' || e.status === 'disetujui');
-  const chartMonths = Array.from({ length: 6 }, (_value, index) => {
+  const chartMonths = Array.from({ length: 12 }, (_value, index) => {
     const date = new Date();
     date.setDate(1);
-    date.setMonth(date.getMonth() - (5 - index));
+    date.setMonth(date.getMonth() - (11 - index));
     return date;
   });
 
@@ -45,7 +45,12 @@ export const TransparencyPortal: React.FC<TransparencyPortalProps> = ({ onOpenDo
       key,
       month: monthLabelFormatter.format(date),
       Pemasukan: 0,
-      Pengeluaran: 0
+      Pengeluaran: 0,
+      Saldo: 0,
+      latestDonationTx: '',
+      latestDonationDate: '',
+      latestExpenseTx: '',
+      latestExpenseDate: ''
     };
   });
 
@@ -57,6 +62,10 @@ export const TransparencyPortal: React.FC<TransparencyPortalProps> = ({ onOpenDo
     const bucketIndexValue = bucketIndex.get(key);
     if (bucketIndexValue !== undefined) {
       chartBuckets[bucketIndexValue].Pemasukan += donation.amount;
+      if (!chartBuckets[bucketIndexValue].latestDonationDate || donationDate > new Date(chartBuckets[bucketIndexValue].latestDonationDate)) {
+        chartBuckets[bucketIndexValue].latestDonationTx = donation.transactionNumber;
+        chartBuckets[bucketIndexValue].latestDonationDate = donation.donatedAt;
+      }
     }
   });
 
@@ -66,10 +75,52 @@ export const TransparencyPortal: React.FC<TransparencyPortalProps> = ({ onOpenDo
     const bucketIndexValue = bucketIndex.get(key);
     if (bucketIndexValue !== undefined) {
       chartBuckets[bucketIndexValue].Pengeluaran += expense.amount;
+      if (!chartBuckets[bucketIndexValue].latestExpenseDate || expenseDate > new Date(chartBuckets[bucketIndexValue].latestExpenseDate)) {
+        chartBuckets[bucketIndexValue].latestExpenseTx = expense.expenseNumber;
+        chartBuckets[bucketIndexValue].latestExpenseDate = expense.transactionDate;
+      }
     }
   });
 
-  const chartData = chartBuckets;
+  let runningBalance = 0;
+  const chartData = chartBuckets.map(bucket => {
+    runningBalance += bucket.Pemasukan - bucket.Pengeluaran;
+    return {
+      ...bucket,
+      Saldo: runningBalance
+    };
+  });
+
+  const renderChartTooltip = ({ active, payload, label }: any) => {
+    if (!active || !payload?.length) {
+      return null;
+    }
+
+    const data = payload[0]?.payload;
+    return (
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-lg min-w-[240px]">
+        <p className="text-xs font-bold text-slate-900 mb-3">{label}</p>
+        <div className="space-y-2 text-xs">
+          <div className="flex items-center justify-between gap-4">
+            <span className="text-emerald-700 font-medium">Pemasukan</span>
+            <span className="font-bold text-slate-900">Rp {Number(data?.Pemasukan || 0).toLocaleString('id-ID')}</span>
+          </div>
+          <div className="flex items-center justify-between gap-4">
+            <span className="text-rose-600 font-medium">Pengeluaran</span>
+            <span className="font-bold text-slate-900">Rp {Number(data?.Pengeluaran || 0).toLocaleString('id-ID')}</span>
+          </div>
+          <div className="flex items-center justify-between gap-4 border-t border-slate-100 pt-2">
+            <span className="text-amber-600 font-medium">Saldo Kumulatif</span>
+            <span className="font-black text-slate-900">Rp {Number(data?.Saldo || 0).toLocaleString('id-ID')}</span>
+          </div>
+          <div className="pt-2 space-y-1 text-[10px] text-slate-500">
+            <p>Donasi terbaru: {data?.latestDonationTx || '-'}</p>
+            <p>Pengeluaran terbaru: {data?.latestExpenseTx || '-'}</p>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10 text-slate-900">
@@ -156,7 +207,7 @@ export const TransparencyPortal: React.FC<TransparencyPortalProps> = ({ onOpenDo
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
             <h3 className="font-sans font-black text-xl text-slate-900">Grafik Arus Kas Pemasukan vs Pengeluaran</h3>
-            <p className="text-xs text-slate-500 mt-0.5">Perbandingan donasi dan pengeluaran berdasarkan transaksi terbaru yang tersimpan di database.</p>
+            <p className="text-xs text-slate-500 mt-0.5">Perbandingan donasi dan pengeluaran 12 bulan terakhir berdasarkan transaksi terbaru yang tersimpan di database.</p>
           </div>
           <span className="text-xs font-bold px-3.5 py-1.5 bg-emerald-100 text-emerald-800 rounded-full border border-emerald-200">
             Rekonsiliasi Real-Time
@@ -165,7 +216,7 @@ export const TransparencyPortal: React.FC<TransparencyPortalProps> = ({ onOpenDo
 
         <div className="h-72 w-full pt-4">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+            <ComposedChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
               <XAxis dataKey="month" tickLine={false} axisLine={false} style={{ fontSize: '11px', fill: '#64748b' }} />
               <YAxis
@@ -174,14 +225,12 @@ export const TransparencyPortal: React.FC<TransparencyPortalProps> = ({ onOpenDo
                 style={{ fontSize: '11px', fill: '#64748b' }}
                 tickFormatter={(val) => `Rp ${(val/1000000).toFixed(0)}Jt`}
               />
-              <Tooltip
-                formatter={(value: any) => [`Rp ${Number(value).toLocaleString('id-ID')}`, '']}
-                contentStyle={{ backgroundColor: '#ffffff', borderRadius: '16px', border: '1px solid #e2e8f0', color: '#0f172a', fontSize: '12px' }}
-              />
+              <Tooltip content={renderChartTooltip} />
               <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
               <Bar dataKey="Pemasukan" fill="#059669" radius={[8, 8, 0, 0]} barSize={24} />
               <Bar dataKey="Pengeluaran" fill="#94a3b8" radius={[8, 8, 0, 0]} barSize={24} />
-            </BarChart>
+              <Line type="monotone" dataKey="Saldo" stroke="#b45309" strokeWidth={3} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+            </ComposedChart>
           </ResponsiveContainer>
         </div>
       </div>
