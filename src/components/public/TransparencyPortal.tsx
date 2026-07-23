@@ -49,7 +49,7 @@ export const TransparencyPortal: React.FC<TransparencyPortalProps> = ({ onOpenDo
           </h1>
 
           <p className="text-emerald-100 text-xs sm:text-sm leading-relaxed font-normal">
-            Sebagai bentuk amanah, seluruh transaksi donasi masuk dan pengeluaran bantuan dicatat secara cermat, dapat diverifikasi kuitansinya, dan dipublikasikan tanpa membuka data sensitif identitas anak.
+            Sebagai bentuk amanah, seluruh transaksi donasi disimpan terlebih dahulu sebagai pending, lalu dicatat ke laporan keuangan setelah divalidasi admin. Riwayatnya tetap dapat diverifikasi kuitansinya tanpa membuka data sensitif identitas anak.
           </p>
 
           <div className="pt-2 flex flex-wrap items-center gap-4 text-xs text-emerald-100 font-bold">

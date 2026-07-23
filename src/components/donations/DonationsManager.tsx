@@ -128,12 +128,12 @@ export const DonationsManager: React.FC<DonationsManagerProps> = ({ onRefreshDat
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h2 className="font-serif font-bold text-xl text-slate-900">Pengelolaan & Verifikasi Donasi Masuk</h2>
-            <p className="text-xs text-slate-500">Mencatat, memverifikasi mutasi bank, dan menerbitkan kuitansi elektronik resmi untuk donatur.</p>
+            <p className="text-xs text-slate-500">Donasi baru disimpan sebagai pending. Buku kas, saldo, dan laporan hanya bertambah setelah statusnya divalidasi menjadi berhasil.</p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2 text-xs font-semibold">
             <span className="px-3 py-1.5 rounded-full bg-emerald-100 text-emerald-800">
-              Terverifikasi: {donations.filter(d => d.paymentStatus === 'berhasil').length}
+              Tercatat: {donations.filter(d => d.paymentStatus === 'berhasil').length}
             </span>
             <span className="px-3 py-1.5 rounded-full bg-amber-100 text-amber-800">
               Menunggu: {donations.filter(d => d.paymentStatus === 'menunggu_verifikasi').length}
@@ -226,13 +226,13 @@ export const DonationsManager: React.FC<DonationsManagerProps> = ({ onRefreshDat
                     {don.paymentStatus === 'berhasil' && (
                       <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px]">
                         <CheckCircle2 className="w-3 h-3" />
-                        Terverifikasi
+                        Tercatat
                       </span>
                     )}
                     {don.paymentStatus === 'menunggu_verifikasi' && (
                       <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 font-bold text-[10px]">
                         <Clock className="w-3 h-3" />
-                        Menunggu
+                        Belum Dicatat
                       </span>
                     )}
                     {don.paymentStatus === 'ditolak' && (

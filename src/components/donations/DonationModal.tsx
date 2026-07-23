@@ -286,7 +286,7 @@ export const DonationModal: React.FC<DonationModalProps> = ({
 
               <div className="p-3.5 bg-emerald-50 rounded-2xl border border-emerald-200 text-xs text-emerald-800 flex items-center gap-2 font-medium">
                 <Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span>Pembayaran akan diverifikasi otomatis oleh Bendahara dalam 1x24 jam.</span>
+                <span>Donasi dicatat ke buku kas setelah divalidasi admin dalam 1x24 jam.</span>
               </div>
             </div>
 
