@@ -23,15 +23,53 @@ export const TransparencyPortal: React.FC<TransparencyPortalProps> = ({ onOpenDo
   const financialSummary: FinancialSummary = db.getFinancialSummary();
   const successfulDonations: Donation[] = db.getDonations().filter(d => d.paymentStatus === 'berhasil');
   const approvedExpenses: Expense[] = db.getExpenses().filter(e => e.status === 'dibayarkan' || e.status === 'disetujui');
+  const chartMonths = Array.from({ length: 6 }, (_value, index) => {
+    const date = new Date();
+    date.setDate(1);
+    date.setMonth(date.getMonth() - (5 - index));
+    return date;
+  });
 
-  // Chart dataset for monthly summary
-  const chartData = [
-    { month: 'Nov 2024', Pemasukan: 18000000, Pengeluaran: 12000000 },
-    { month: 'Des 2024', Pemasukan: 22000000, Pengeluaran: 15500000 },
-    { month: 'Jan 2025', Pemasukan: 28000000, Pengeluaran: 19000000 },
-    { month: 'Feb 2025', Pemasukan: 32000000, Pengeluaran: 22500000 },
-    { month: 'Mar 2025', Pemasukan: financialSummary.totalDonationReceived, Pengeluaran: financialSummary.totalExpenseApproved }
-  ];
+  const monthKeyFormatter = new Intl.DateTimeFormat('en-CA', {
+    year: 'numeric',
+    month: '2-digit'
+  });
+  const monthLabelFormatter = new Intl.DateTimeFormat('id-ID', {
+    month: 'short',
+    year: 'numeric'
+  });
+
+  const chartBuckets = chartMonths.map(date => {
+    const key = monthKeyFormatter.format(date);
+    return {
+      key,
+      month: monthLabelFormatter.format(date),
+      Pemasukan: 0,
+      Pengeluaran: 0
+    };
+  });
+
+  const bucketIndex = new Map(chartBuckets.map((bucket, index) => [bucket.key, index]));
+
+  successfulDonations.forEach(donation => {
+    const donationDate = new Date(donation.donatedAt);
+    const key = monthKeyFormatter.format(donationDate);
+    const bucketIndexValue = bucketIndex.get(key);
+    if (bucketIndexValue !== undefined) {
+      chartBuckets[bucketIndexValue].Pemasukan += donation.amount;
+    }
+  });
+
+  approvedExpenses.forEach(expense => {
+    const expenseDate = new Date(expense.transactionDate);
+    const key = monthKeyFormatter.format(expenseDate);
+    const bucketIndexValue = bucketIndex.get(key);
+    if (bucketIndexValue !== undefined) {
+      chartBuckets[bucketIndexValue].Pengeluaran += expense.amount;
+    }
+  });
+
+  const chartData = chartBuckets;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10 text-slate-900">
@@ -118,7 +156,7 @@ export const TransparencyPortal: React.FC<TransparencyPortalProps> = ({ onOpenDo
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
             <h3 className="font-sans font-black text-xl text-slate-900">Grafik Arus Kas Pemasukan vs Pengeluaran</h3>
-            <p className="text-xs text-slate-500 mt-0.5">Perbandingan pertumbuhan donasi yang diterima dan realisasi pengeluaran bantuan.</p>
+            <p className="text-xs text-slate-500 mt-0.5">Perbandingan donasi dan pengeluaran berdasarkan transaksi terbaru yang tersimpan di database.</p>
           </div>
           <span className="text-xs font-bold px-3.5 py-1.5 bg-emerald-100 text-emerald-800 rounded-full border border-emerald-200">
             Rekonsiliasi Real-Time
