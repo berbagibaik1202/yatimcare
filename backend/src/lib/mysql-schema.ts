@@ -1,7 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import type { Pool } from 'mysql2/promise';
-import { fileURLToPath } from 'node:url';
 
 type ColumnDef = {
   name: string;
@@ -23,11 +22,10 @@ const SCALAR_TYPES = new Set(['String', 'Int', 'Boolean', 'DateTime', 'Decimal',
 const ENUM_NAMES = new Set<string>();
 
 function resolveSchemaPath() {
-  const runtimeDir = path.dirname(fileURLToPath(import.meta.url));
+  const runtimeDir = process.cwd();
   const candidates = [
-    path.resolve(runtimeDir, '../schema/database-schema.txt'),
-    path.resolve(process.cwd(), 'schema/database-schema.txt'),
-    path.resolve(process.cwd(), 'backend/schema/database-schema.txt')
+    path.resolve(runtimeDir, 'schema/database-schema.txt'),
+    path.resolve(runtimeDir, 'backend/schema/database-schema.txt')
   ];
 
   for (const candidate of candidates) {

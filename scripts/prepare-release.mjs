@@ -48,9 +48,12 @@ function copyIfExists(sourcePath, targetPath) {
 function writeReleasePackageJson(sourcePackagePath, targetPackagePath) {
   const sourcePackage = JSON.parse(fs.readFileSync(sourcePackagePath, 'utf8'));
   const releasePackage = {
-    ...sourcePackage,
+    name: sourcePackage.name,
+    private: true,
+    version: sourcePackage.version,
+    type: sourcePackage.type,
     scripts: {
-      start: 'node server.js'
+      start: 'node server.cjs'
     }
   };
 
@@ -58,17 +61,7 @@ function writeReleasePackageJson(sourcePackagePath, targetPackagePath) {
 }
 
 function copyBackendRuntime(sourceDir, targetDir) {
-  const allowedNames = new Set([
-    'app.js',
-    'server.js',
-    'config',
-    'generated',
-    'lib',
-    'middleware',
-    'modules',
-    'routes',
-    'schema'
-  ]);
+  const allowedNames = new Set(['server.cjs', 'schema']);
 
   copyDirContents(sourceDir, targetDir, entry => {
     if (entry.name === 'package-lock.json') {
@@ -96,7 +89,6 @@ fs.mkdirSync(backendDir, { recursive: true });
 copyBackendRuntime(backendRootDir, backendDir);
 
 writeReleasePackageJson(path.join(rootDir, 'backend', 'package.json'), path.join(backendDir, 'package.json'));
-copyIfExists(path.join(rootDir, 'backend', 'package-lock.json'), path.join(backendDir, 'package-lock.json'));
 copyIfExists(path.join(rootDir, 'backend', '.env.example'), path.join(backendDir, '.env.example'));
 
 const backendEnvPath = path.join(rootDir, 'backend', '.env');

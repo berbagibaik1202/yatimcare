@@ -1,12 +1,10 @@
 import fs from 'node:fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
 import { z } from 'zod';
 
-const currentDir = path.dirname(fileURLToPath(import.meta.url));
-const backendRoot = path.resolve(currentDir, '../..');
-const cwdEnvPath = path.join(process.cwd(), '.env');
-const backendEnvPath = path.join(backendRoot, '.env');
+const cwdRoot = process.cwd();
+const cwdEnvPath = path.join(cwdRoot, '.env');
+const backendEnvPath = path.join(cwdRoot, 'backend', '.env');
 
 function parseEnvFile(filePath: string) {
   if (!fs.existsSync(filePath)) {

@@ -4,6 +4,7 @@ dist/
 release/
 backend/app.js
 backend/server.js
+backend/server.cjs
 backend/config/
 backend/generated/
 backend/lib/
