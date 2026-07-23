@@ -217,7 +217,7 @@ export const AppSettingsManager: React.FC<AppSettingsManagerProps> = ({ onRefres
           <div className="rounded-3xl border border-emerald-100 bg-emerald-50/60 p-4 space-y-4">
             <div className="flex items-center gap-2 text-xs font-bold text-emerald-800">
               <Building2 className="w-4 h-4" />
-              <span>Rekening Fallback Sistem</span>
+              <span>Rekening Yayasan</span>
             </div>
 
             <div className="grid grid-cols-1 gap-3">

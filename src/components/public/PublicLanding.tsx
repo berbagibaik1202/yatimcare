@@ -391,7 +391,7 @@ export const PublicLanding: React.FC<PublicLandingProps> = ({
 
             <div className="pt-2">
               <div className="p-5 bg-white/10 backdrop-blur-md rounded-3xl border border-white/10 max-w-xl">
-                <p className="text-[11px] text-amber-300 font-bold uppercase tracking-wider mb-3">Rekening Resmi dari Pengaturan Admin</p>
+                <p className="text-[11px] text-amber-300 font-bold uppercase tracking-wider mb-3">Rekening Donasi Yayasan</p>
 
                 {bankAccounts.length > 0 ? (
                   <div className="space-y-3">
@@ -410,7 +410,7 @@ export const PublicLanding: React.FC<PublicLandingProps> = ({
                   </div>
                 ) : (
                   <p className="text-xs text-slate-300 leading-relaxed">
-                    Rekening resmi belum diatur di admin settings.
+                    Rekening donasi belum diatur.
                   </p>
                 )}
               </div>

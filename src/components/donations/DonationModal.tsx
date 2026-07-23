@@ -369,7 +369,7 @@ export const DonationModal: React.FC<DonationModalProps> = ({
                 ))}
               </select>
               <p className="text-[10px] text-slate-500 mt-1.5 leading-relaxed">
-                Rekening ini diambil dari pengaturan admin dan menjadi tujuan transfer donasi.
+                Rekening ini berasal dari data rekening yayasan dan menjadi tujuan transfer donasi.
               </p>
             </div>
 
