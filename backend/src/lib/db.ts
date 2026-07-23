@@ -794,6 +794,8 @@ class ModelDelegate {
 const pool = mysql.createPool(getDatabaseUrl());
 const prismaClient = new MysqlCompatClient(pool);
 
+// Legacy export name kept so the existing routes keep working.
+// This is a custom MySQL compatibility client, not Prisma ORM.
 export const prisma = prismaClient as AnyRecord;
 export { Prisma, Decimal };
 

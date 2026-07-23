@@ -1,7 +1,7 @@
 async function main() {
   const { env, getDatabaseConnectionInfo } = await import('./config/env.js');
   const { createApp } = await import('./app.js');
-  const { prisma } = await import('./lib/db.js');
+  const { prisma: dbClient } = await import('./lib/db.js');
   const dbInfo = getDatabaseConnectionInfo();
 
   console.log(
@@ -15,7 +15,7 @@ async function main() {
     console.log('[YatimCare Backend] Skipping schema initialization on startup');
   }
 
-  let prismaClient: { $disconnect?: () => Promise<void> } | null = prisma;
+  let activeDbClient: { $disconnect?: () => Promise<void> } | null = dbClient;
   const app = createApp();
 
   const server = app.listen(env.PORT, () => {
@@ -24,7 +24,7 @@ async function main() {
 
   const shutdown = async () => {
     server.close(async () => {
-      await prismaClient?.$disconnect?.();
+      await activeDbClient?.$disconnect?.();
       process.exit(0);
     });
   };
