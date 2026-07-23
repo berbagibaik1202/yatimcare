@@ -77,6 +77,41 @@ function parseDefaultToken(raw: string | undefined, sqlType: string) {
   return undefined;
 }
 
+function extractDefaultToken(attributes: string) {
+  const marker = '@default(';
+  const startIndex = attributes.indexOf(marker);
+
+  if (startIndex === -1) {
+    return undefined;
+  }
+
+  let depth = 1;
+  let token = '';
+
+  for (let index = startIndex + marker.length; index < attributes.length; index += 1) {
+    const char = attributes[index];
+
+    if (char === '(') {
+      depth += 1;
+      token += char;
+      continue;
+    }
+
+    if (char === ')') {
+      depth -= 1;
+      if (depth === 0) {
+        return token;
+      }
+      token += char;
+      continue;
+    }
+
+    token += char;
+  }
+
+  return undefined;
+}
+
 function parseSqlType(typeName: string, attributes: string) {
   const decimalMatch = attributes.match(/@db\.Decimal\((\d+),\s*(\d+)\)/);
   if (decimalMatch) {
@@ -149,7 +184,7 @@ function parseField(line: string): ColumnDef | null {
   const unique = /@unique\b/.test(attrs);
   const nullable = optionalMark === '?';
   const sqlType = parseSqlType(rawType, attrs);
-  const defaultToken = attrs.match(/@default\(([^)]+)\)/)?.[1];
+  const defaultToken = extractDefaultToken(attrs);
   const onUpdateCurrentTimestamp = /@updatedAt\b/.test(attrs) && rawType === 'DateTime';
   const defaultSql = onUpdateCurrentTimestamp
     ? 'DEFAULT CURRENT_TIMESTAMP'
